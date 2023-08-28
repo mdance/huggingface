@@ -1,0 +1,19 @@
+services:
+  cache.huggingface:
+    class: Drupal\Core\Cache\CacheBackendInterface
+    tags:
+      - { name: cache.bin }
+    factory: ['@cache_factory', 'get']
+    arguments: [huggingface]
+  huggingface:
+    class: Drupal\huggingface\HuggingFaceService
+    arguments:
+      - '@config.factory'
+      - '@state'
+      - '@http_client_factory'
+      - '@file_system'
+      - '@file.repository'
+      - '@entity_type.manager'
+      - '@database'
+      - '@cache.huggingface'
+      - '@module_handler'

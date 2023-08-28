@@ -1,0 +1,13 @@
+<?php
+
+/**
+ * @file
+ * Provides Hugging Face functionality.
+ */
+
+/**
+ * Implements hook_cron().
+ */
+function huggingface_cron() {
+  //\Drupal::service('huggingface')->cron();
+}

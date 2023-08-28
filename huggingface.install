@@ -1,0 +1,36 @@
+<?php
+
+/**
+ * @file
+ * Provides install and update hooks.
+ */
+
+use Drupal\Core\Database\Database;
+use Drupal\huggingface\HuggingFaceConstants;
+
+/**
+ * Implements hook_schema().
+ */
+function huggingface_schema() {
+  $output[HuggingFaceConstants::TABLE_RESPONSES] = [
+    'description' => 'Provides the Hugging Face responses.',
+    'fields' => [
+      'type' => [
+        'description' => 'Provides the response type.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+      ],
+      'created' => [
+        'description' => 'Provides the created date.',
+        'type' => 'int',
+      ],
+      'data' => [
+        'description' => 'Provides the response data.',
+        'type' => 'text',
+      ],
+    ],
+  ];
+
+  return $output;
+}

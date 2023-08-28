@@ -1,0 +1,21 @@
+huggingface.admin:
+  path: '/admin/config/services/huggingface'
+  defaults:
+    _title: 'Hugging Face'
+    _controller: '\Drupal\system\Controller\SystemController::systemAdminMenuBlockPage'
+  requirements:
+    _permission: 'administer huggingface'
+huggingface.admin.settings:
+  path: '/admin/config/services/huggingface/settings'
+  defaults:
+    _title: 'Settings'
+    _form: 'Drupal\huggingface\Form\HuggingFaceAdminForm'
+  requirements:
+    _permission: 'administer huggingface'
+huggingface.admin.test:
+  path: '/admin/config/services/huggingface/test'
+  defaults:
+    _title: 'Test Endpoint'
+    _form: 'Drupal\huggingface\Form\HuggingFaceTestForm'
+  requirements:
+    _permission: 'administer huggingface'

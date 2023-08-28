@@ -1,0 +1,13 @@
+{
+    "name": "drupal/huggingface",
+    "type": "drupal-module",
+    "description": "Provides Hugging Face functionality.",
+    "homepage": "http://drupal.org/project/huggingface",
+    "license": "GPL-2.0-or-later",
+    "require": {
+        "php": "^7.3 || ^8.0",
+        "drupal/core": "^8 || ^9 || ^10"
+    },
+    "require-dev": {
+    }
+}

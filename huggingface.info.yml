@@ -1,0 +1,7 @@
+name: Hugging Face
+type: module
+description: 'Provides Hugging Face functionality.'
+package: Machine Learning
+version: VERSION
+core_version_requirement: ^9 || ^10
+configure: huggingface.admin.settings

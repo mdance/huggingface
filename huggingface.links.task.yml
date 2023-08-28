@@ -1,0 +1,9 @@
+huggingface.admin.settings:
+  route_name: huggingface.admin.settings
+  base_route: huggingface.admin
+  title: 'Settings'
+
+huggingface.admin.test:
+  route_name: huggingface.admin.test
+  base_route: huggingface.admin
+  title: 'Test'
