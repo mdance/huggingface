@@ -3,6 +3,11 @@ huggingface.admin.settings:
   base_route: huggingface.admin
   title: 'Settings'
 
+entity.inference_endpoint.collection:
+  route_name: entity.inference_endpoint.collection
+  base_route: huggingface.admin
+  title: 'Inference Endpoints'
+
 huggingface.admin.test:
   route_name: huggingface.admin.test
   base_route: huggingface.admin

@@ -189,6 +189,36 @@ class HuggingFaceService implements HuggingFaceServiceInterface {
   }
 
   /**
+   * {@inheritDoc}
+   */
+  public function getTaskModels(): array {
+    // https://huggingface.co/docs/api-inference/detailed_parameters
+    $output = [];
+
+    $output['text_classification'] = 'distilbert-base-uncased-finetuned-sst-2-english';
+    $output['zero_shot_classification'] = 'facebook/bart-large-mnli';
+    $output['token_classification'] = 'dbmdz/bert-large-cased-finetuned-conll03-english';
+    $output['question_answering'] = 'deepset/roberta-base-squad2';
+    $output['fill_mask'] = 'bert-base-uncased';
+    $output['summarization'] = 'facebook/bart-large-cnn';
+    //$output['translation'] = 't5-base';
+    $output['translation'] = 'Helsinki-NLP/opus-mt-ru-en';
+    $output['text_to_text_generation'] = 'dbmdz/bert-large-cased-finetuned-conll03-english';
+    $output['text_generation'] = 'gpt2';
+    $output['feature_extraction'] = 'sentence-transformers/paraphrase-xlm-r-multi';
+    $output['sentence_similarity'] = 'sentence-transformers/all-MiniLM-L6-v2';
+    $output['image_classification'] = 'google/vit-base-patch16-224';
+    $output['automatic_speech_recognition'] = 'facebook/wav2vec2-base-960h';
+    $output['audio_classification'] = 'superb/hubert-large-superb-er';
+    $output['object_detection'] = 'facebook/detr-resnet-50';
+    $output['image_segmentation'] = 'facebook/detr-resnet-50-panoptic';
+    $output['table_question_answering'] = 'google/tapas-base-finetuned-wtq';
+    $output['conversational'] = 'microsoft/DialoGPT-large';
+
+    return $output;
+  }
+
+  /**
    * Performs a task.
    *
    * @param string $task
@@ -977,6 +1007,45 @@ class HuggingFaceService implements HuggingFaceServiceInterface {
 
     $body = (string) $response->getBody();
     $this->addResponse('text_to_image', $body);
+
+    return json_decode($body);
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  public function getInferenceEndpoints(array $parameters = []){
+    $url = HuggingFaceConstants::SCHEMA . '://' . HuggingFaceConstants::HOST . HuggingFaceConstants::PATH_ENDPOINTS;
+
+    $options = [];
+
+    $options[RequestOptions::HEADERS] = $this->getHeaders();
+
+    $defaults = [
+      'access_token' => $this->getAccessToken(),
+      'namespace' => '',
+    ];
+
+    $parameters = array_merge($defaults, $parameters);
+
+    $options[RequestOptions::HEADERS]['authorization'] = 'Bearer ' . $parameters['access_token'];
+
+    if (empty($parameters['namespace'])) {
+      throw new HuggingFaceException('The inference endpoints namespace was not specified.');
+    }
+
+    $url .= '/' . $parameters['namespace'];
+
+    $response = $this->client->get($url, $options);
+
+    $status_code = $response->getStatusCode();
+
+    if ($status_code !== 200) {
+      throw new HuggingFaceException('An error occurred retrieving the inference endpoints.');
+    }
+
+    $body = (string) $response->getBody();
+    $this->addResponse('inference_endpoints', $body);
 
     return json_decode($body);
   }

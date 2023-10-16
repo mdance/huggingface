@@ -1,2 +1,5 @@
 administer huggingface:
   title: 'Administer Hugging Face'
+
+administer inference_endpoint:
+  title: 'Administer inference endpoint'

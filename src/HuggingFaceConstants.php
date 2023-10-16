@@ -18,9 +18,39 @@ class HuggingFaceConstants {
   const SETTINGS = 'huggingface.settings';
 
   /**
+   * Provides the schema.
+   */
+  public const SCHEMA = 'https';
+
+  /**
+   * Provides the host.
+   */
+  public const HOST = 'api.endpoints.huggingface.cloud';
+
+  /**
+   * Provides the inference api host.
+   */
+  public const HOST_INFERENCE = 'api-inference.huggingface.co';
+
+  /**
    * Provides the path.
    */
   const PATH = '';
+
+  /**
+   * Provides the version 2 path.
+   */
+  public const PATH_V2 = '/v2';
+
+  /**
+   * Provides the endpoints path.
+   */
+  public const PATH_ENDPOINTS = self:: PATH_V2 . '/endpoint';
+
+  /**
+   * Provides the models path.
+   */
+  public const PATH_MODELS = '/models';
 
   /**
    * Provides the module directory.

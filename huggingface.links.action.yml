@@ -1,0 +1,11 @@
+entity.inference_endpoint.add_form:
+  route_name: 'entity.inference_endpoint.add_form'
+  title: 'Add inference endpoint'
+  appears_on:
+    - entity.inference_endpoint.collection
+
+entity.inference_endpoint.sync:
+  route_name: 'entity.inference_endpoint.sync'
+  title: 'Sync inference endpoints'
+  appears_on:
+    - entity.inference_endpoint.collection

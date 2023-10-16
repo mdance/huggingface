@@ -75,6 +75,11 @@ interface HuggingFaceServiceInterface {
   public function getTaskOptions();
 
   /**
+   * Gets the default task models.
+   */
+  public function getTaskModels(): array;
+
+  /**
    * Performs a task.
    *
    * @param string $task
@@ -269,5 +274,16 @@ interface HuggingFaceServiceInterface {
    * @throws HuggingFaceException
    */
   public function textToImage(array $parameters = []);
+
+  /**
+   * Gets the inference endpoints.
+   *
+   * @param array $parameters
+   *   An array of parameters.
+   *
+   * @return array
+   *   The inference endpoints.
+   */
+  public function getInferenceEndpoints(array $parameters = []);
 
 }

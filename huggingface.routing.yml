@@ -19,3 +19,43 @@ huggingface.admin.test:
     _form: 'Drupal\huggingface\Form\HuggingFaceTestForm'
   requirements:
     _permission: 'administer huggingface'
+
+entity.inference_endpoint.collection:
+  path: '/admin/config/services/huggingface/inference-endpoints'
+  defaults:
+    _entity_list: 'inference_endpoint'
+    _title: 'Inference Endpoint configuration'
+  requirements:
+    _permission: 'administer inference_endpoint'
+
+entity.inference_endpoint.add_form:
+  path: '/admin/config/services/huggingface/inference-endpoints/add'
+  defaults:
+    _entity_form: 'inference_endpoint.add'
+    _title: 'Add an inference endpoint'
+  requirements:
+    _permission: 'administer inference_endpoint'
+
+entity.inference_endpoint.edit_form:
+  path: '/admin/config/services/huggingface/inference-endpoints/{inference_endpoint}'
+  defaults:
+    _entity_form: 'inference_endpoint.edit'
+    _title: 'Edit an inference endpoint'
+  requirements:
+    _permission: 'administer inference_endpoint'
+
+entity.inference_endpoint.delete_form:
+  path: '/admin/config/services/huggingface/inference-endpoints/{inference_endpoint}/delete'
+  defaults:
+    _entity_form: 'inference_endpoint.delete'
+    _title: 'Delete an inference endpoint'
+  requirements:
+    _permission: 'administer inference_endpoint'
+
+entity.inference_endpoint.sync:
+  path: '/admin/config/services/huggingface/inference-endpoints/sync'
+  defaults:
+    _title: 'Sync inference endpoints'
+    _form: 'Drupal\huggingface\Form\InferenceEndpointsSyncForm'
+  requirements:
+    _permission: 'administer inference_endpoint'

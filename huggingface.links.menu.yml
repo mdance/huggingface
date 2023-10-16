@@ -16,3 +16,9 @@ huggingface.admin.test:
   route_name: huggingface.admin.test
   parent: huggingface.admin
   weight: 1
+
+entity.inference_endpoint.overview:
+  title: Inference Endpoints
+  parent: huggingface.admin
+  description: 'Administer inference endpoints.'
+  route_name: entity.inference_endpoint.collection
