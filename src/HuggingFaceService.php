@@ -1502,7 +1502,11 @@ class HuggingFaceService implements HuggingFaceServiceInterface {
     }
 
     // Build the URL for the Hosted Inference API.
-    $url = 'https://router.huggingface.co/models/' . $model;
+    // HuggingFace Inference Providers API.
+    // Format: https://router.huggingface.co/{provider}/models/{model}
+    // The hf-inference provider is for free serverless inference (CPU only).
+    $provider = $parameters['provider'] ?? 'hf-inference';
+    $url = 'https://router.huggingface.co/' . $provider . '/models/' . $model;
 
     $options = [];
     $options[RequestOptions::HEADERS] = [
