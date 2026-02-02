@@ -448,8 +448,8 @@ class InferenceEndpointForm extends EntityForm {
         $this->messenger()->addStatus($this->t('Inference endpoint created on HuggingFace. It may take a few minutes to initialize.'));
       }
       catch (\Exception $e) {
-        // Set form error and rebuild to preserve values.
-        $form_state->setErrorByName('', $this->t('Failed to create endpoint on HuggingFace: @error', [
+        // Show error and rebuild form to preserve values.
+        $this->messenger()->addError($this->t('Failed to create endpoint on HuggingFace: @error', [
           '@error' => $e->getMessage(),
         ]));
         $form_state->setRebuild();
