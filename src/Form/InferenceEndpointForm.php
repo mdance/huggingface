@@ -115,8 +115,10 @@ class InferenceEndpointForm extends EntityForm {
       '#type' => 'textfield',
       '#title' => $this->t('Endpoint Name'),
       '#default_value' => $this->entity->get('name'),
-      '#description' => $this->t('The unique name of your inference endpoint on HuggingFace (as shown in the Inference Endpoints dashboard).'),
+      '#description' => $this->t('The unique name of your inference endpoint. Only lowercase letters, numbers, and hyphens allowed. Maximum 32 characters.'),
       '#required' => TRUE,
+      '#maxlength' => 32,
+      '#pattern' => '[a-z0-9][a-z0-9-]*[a-z0-9]|[a-z0-9]',
     ];
 
     // Endpoint Configuration.
@@ -386,6 +388,16 @@ class InferenceEndpointForm extends EntityForm {
    */
   public function validateForm(array &$form, FormStateInterface $form_state) {
     parent::validateForm($form, $form_state);
+
+    // Validate endpoint name format.
+    $name = $form_state->getValue('name');
+    if (!empty($name)) {
+      // Must be lowercase alphanumeric and hyphens only, max 32 chars.
+      // Cannot start or end with a hyphen.
+      if (!preg_match('/^[a-z0-9]([a-z0-9-]{0,30}[a-z0-9])?$/', $name)) {
+        $form_state->setErrorByName('name', $this->t('Endpoint name must contain only lowercase letters, numbers, and hyphens. It cannot start or end with a hyphen. Maximum 32 characters.'));
+      }
+    }
 
     $is_new = $this->entity->isNew();
     $create_on_huggingface = $form_state->getValue('create_on_huggingface');
