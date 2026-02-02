@@ -175,6 +175,7 @@ class InferenceEndpointForm extends EntityForm {
       '#description' => $this->t('The ML framework used by the model. Leave as auto-detect unless you need a specific framework.'),
     ];
 
+    // Only include tasks that the HuggingFace API accepts.
     $form['model_config']['task'] = [
       '#type' => 'select',
       '#title' => $this->t('Task'),
@@ -183,7 +184,6 @@ class InferenceEndpointForm extends EntityForm {
         '' => $this->t('- Auto-detect -'),
         // NLP Tasks.
         'text-generation' => $this->t('Text Generation'),
-        'text2text-generation' => $this->t('Text-to-Text Generation'),
         'text-classification' => $this->t('Text Classification'),
         'token-classification' => $this->t('Token Classification (NER)'),
         'question-answering' => $this->t('Question Answering'),
@@ -191,38 +191,26 @@ class InferenceEndpointForm extends EntityForm {
         'fill-mask' => $this->t('Fill Mask'),
         'summarization' => $this->t('Summarization'),
         'translation' => $this->t('Translation'),
-        'conversational' => $this->t('Conversational'),
         'zero-shot-classification' => $this->t('Zero-Shot Classification'),
         // Embeddings.
         'feature-extraction' => $this->t('Feature Extraction'),
         'sentence-similarity' => $this->t('Sentence Similarity'),
         'sentence-embeddings' => $this->t('Sentence Embeddings'),
-        'ranking' => $this->t('Ranking / Reranking'),
+        'sentence-ranking' => $this->t('Sentence Ranking'),
+        'text-ranking' => $this->t('Text Ranking'),
         // Vision Tasks.
         'image-classification' => $this->t('Image Classification'),
         'image-segmentation' => $this->t('Image Segmentation'),
         'object-detection' => $this->t('Object Detection'),
-        'zero-shot-object-detection' => $this->t('Zero-Shot Object Detection'),
-        'image-to-text' => $this->t('Image to Text (OCR/Captioning)'),
-        'image-to-image' => $this->t('Image to Image'),
-        'depth-estimation' => $this->t('Depth Estimation'),
-        'mask-generation' => $this->t('Mask Generation'),
-        // Multimodal Tasks.
-        'document-question-answering' => $this->t('Document Question Answering'),
-        'visual-question-answering' => $this->t('Visual Question Answering'),
-        'image-text-to-text' => $this->t('Image-Text to Text'),
-        // Generation Tasks.
+        'image-text-to-text' => $this->t('Image-Text to Text (Vision LLM)'),
         'text-to-image' => $this->t('Text to Image'),
-        'text-to-video' => $this->t('Text to Video'),
-        'text-to-speech' => $this->t('Text to Speech'),
         // Audio Tasks.
         'automatic-speech-recognition' => $this->t('Automatic Speech Recognition'),
         'audio-classification' => $this->t('Audio Classification'),
-        'audio-to-audio' => $this->t('Audio to Audio'),
         // Custom.
-        'custom' => $this->t('Custom'),
+        'custom' => $this->t('Custom (requires custom handler)'),
       ],
-      '#description' => $this->t('The ML task this endpoint performs. Auto-detect uses the model default task. Note: Not all tasks are supported by default containers.'),
+      '#description' => $this->t('The ML task. For DONUT/document models, use "Custom" with a custom handler.'),
     ];
 
     $form['model_config']['revision'] = [
