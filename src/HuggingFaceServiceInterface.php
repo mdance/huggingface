@@ -416,4 +416,24 @@ interface HuggingFaceServiceInterface {
    */
   public function scaleToZeroInferenceEndpoint(string $namespace, string $name, array $parameters = []);
 
+  /**
+   * Performs an image-text-to-text request using the Hosted Inference API.
+   *
+   * This method is used for vision-language models like Florence-2 that can
+   * analyze images and generate text based on a prompt.
+   *
+   * @param array $parameters
+   *   An array of parameters including:
+   *   - model: The model repository (e.g., 'microsoft/Florence-2-large').
+   *   - image: The image data (binary string or base64 encoded).
+   *   - prompt: The text prompt/task for the model.
+   *   - access_token: Optional access token override.
+   *
+   * @return mixed
+   *   The response from the model.
+   *
+   * @throws \Drupal\huggingface\HuggingFaceException
+   */
+  public function imageTextToText(array $parameters = []);
+
 }

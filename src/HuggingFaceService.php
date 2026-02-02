@@ -1488,4 +1488,99 @@ class HuggingFaceService implements HuggingFaceServiceInterface {
     ], $parameters);
   }
 
+  /**
+   * {@inheritDoc}
+   */
+  public function imageTextToText(array $parameters = []) {
+    $model = $parameters['model'] ?? 'microsoft/Florence-2-large';
+    $image = $parameters['image'] ?? '';
+    $prompt = $parameters['prompt'] ?? '<OCR>';
+    $access_token = $parameters['access_token'] ?? $this->getAccessToken();
+
+    if (empty($image)) {
+      throw new HuggingFaceException('Image data is required for image-text-to-text.');
+    }
+
+    // Build the URL for the Hosted Inference API.
+    $url = 'https://api-inference.huggingface.co/models/' . $model;
+
+    $options = [];
+    $options[RequestOptions::HEADERS] = [
+      'Authorization' => 'Bearer ' . $access_token,
+      'Content-Type' => 'application/json',
+    ];
+
+    // Florence-2 expects inputs as a dict with image and text.
+    // The image should be base64 encoded.
+    $imageData = $image;
+    if (!preg_match('/^[A-Za-z0-9+\/=]+$/', $image)) {
+      // Image is binary, encode it.
+      $imageData = base64_encode($image);
+    }
+
+    $payload = [
+      'inputs' => [
+        'image' => $imageData,
+        'text' => $prompt,
+      ],
+      'parameters' => [
+        'max_new_tokens' => $parameters['max_tokens'] ?? 1024,
+      ],
+    ];
+
+    $options[RequestOptions::JSON] = $payload;
+    $options['timeout'] = $parameters['timeout'] ?? 120;
+
+    if ($this->getLogging()) {
+      \Drupal::logger('huggingface')->debug('Image-text-to-text request to @model with prompt: @prompt', [
+        '@model' => $model,
+        '@prompt' => $prompt,
+      ]);
+    }
+
+    try {
+      $response = $this->client->post($url, $options);
+
+      $status_code = $response->getStatusCode();
+
+      if ($status_code !== 200) {
+        $body = (string) $response->getBody();
+        \Drupal::logger('huggingface')->error('Image-text-to-text request failed. Status: @status, Response: @response', [
+          '@status' => $status_code,
+          '@response' => $body,
+        ]);
+        throw new HuggingFaceException('Image-text-to-text request failed: ' . $body);
+      }
+
+      $body = (string) $response->getBody();
+
+      if ($this->getLogging()) {
+        $this->addResponse('image_text_to_text', $body);
+      }
+
+      return json_decode($body);
+    }
+    catch (ClientException $e) {
+      $response_body = $e->hasResponse() ? (string) $e->getResponse()->getBody() : 'No response body';
+      \Drupal::logger('huggingface')->error('Client error in image-text-to-text: @error. Response: @response', [
+        '@error' => $e->getMessage(),
+        '@response' => $response_body,
+      ]);
+
+      // Check for model loading status.
+      $decoded = json_decode($response_body, TRUE);
+      if (isset($decoded['error']) && str_contains($decoded['error'], 'loading')) {
+        throw new HuggingFaceException('Model is currently loading. Please try again in a few seconds. ' . $response_body, 0, $e);
+      }
+
+      throw new HuggingFaceException('Image-text-to-text request failed: ' . $response_body, 0, $e);
+    }
+    catch (\Exception $e) {
+      \Drupal::logger('huggingface')->error('Unexpected error in image-text-to-text: @error', [
+        '@error' => $e->getMessage(),
+      ]);
+      throw $e;
+    }
+  }
+
 }
