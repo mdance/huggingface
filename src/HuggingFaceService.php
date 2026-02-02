@@ -1172,7 +1172,7 @@ class HuggingFaceService implements HuggingFaceServiceInterface {
       'compute' => [
         'accelerator' => $data['accelerator'] ?? 'cpu',
         'instanceSize' => $data['instance_size'] ?? 'x1',
-        'instanceType' => $data['instance_type'] ?? 'intel-icl',
+        'instanceType' => $data['instance_type'] ?? 'intel-spr',
         'scaling' => [
           'minReplica' => $data['min_replica'] ?? 0,
           'maxReplica' => $data['max_replica'] ?? 1,

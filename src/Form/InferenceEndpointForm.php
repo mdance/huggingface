@@ -257,16 +257,24 @@ class InferenceEndpointForm extends EntityForm {
     $form['compute']['instance_type'] = [
       '#type' => 'select',
       '#title' => $this->t('Instance Type'),
-      '#default_value' => $this->entity->get('instanceType') ?: 'intel-icl',
+      '#default_value' => $this->entity->get('instanceType') ?: 'intel-spr',
       '#options' => [
-        'intel-icl' => $this->t('Intel Ice Lake (CPU)'),
-        'intel-sapphire-rapids' => $this->t('Intel Sapphire Rapids (CPU)'),
-        'nvidia-a10g' => $this->t('NVIDIA A10G (GPU)'),
+        // CPU options.
+        'intel-spr' => $this->t('Intel Sapphire Rapids (CPU - AWS/GCP)'),
+        'intel-xeon' => $this->t('Intel Xeon (CPU - Azure)'),
+        // GPU options.
         'nvidia-t4' => $this->t('NVIDIA T4 (GPU)'),
         'nvidia-l4' => $this->t('NVIDIA L4 (GPU)'),
+        'nvidia-a10g' => $this->t('NVIDIA A10G (GPU - AWS)'),
+        'nvidia-l40s' => $this->t('NVIDIA L40S (GPU - AWS)'),
         'nvidia-a100' => $this->t('NVIDIA A100 (GPU)'),
+        'nvidia-h100' => $this->t('NVIDIA H100 (GPU - GCP)'),
+        'nvidia-h200' => $this->t('NVIDIA H200 (GPU - AWS)'),
+        // Accelerators.
+        'inf2' => $this->t('AWS Inferentia2'),
+        'tpu' => $this->t('Google TPU v5e'),
       ],
-      '#description' => $this->t('Cloud instance type. Choose based on your model requirements.'),
+      '#description' => $this->t('Cloud instance type. CPU: intel-spr (AWS/GCP), intel-xeon (Azure). GPU options vary by provider.'),
       '#disabled' => !$is_new,
     ];
 
@@ -366,7 +374,7 @@ class InferenceEndpointForm extends EntityForm {
     // Compute configuration.
     $entity->set('accelerator', $values['accelerator'] ?? 'cpu');
     $entity->set('instanceSize', $values['instance_size'] ?? 'x1');
-    $entity->set('instanceType', $values['instance_type'] ?? 'intel-icl');
+    $entity->set('instanceType', $values['instance_type'] ?? 'intel-spr');
     $entity->set('vendor', $values['vendor'] ?? 'aws');
     $entity->set('region', $values['region'] ?? 'us-east-1');
     $entity->set('minReplica', (int) ($values['min_replica'] ?? 0));
@@ -419,7 +427,7 @@ class InferenceEndpointForm extends EntityForm {
         'task' => $this->entity->get('task') ?: 'text-generation',
         'accelerator' => $this->entity->get('accelerator') ?: 'cpu',
         'instance_size' => $this->entity->get('instanceSize') ?: 'x1',
-        'instance_type' => $this->entity->get('instanceType') ?: 'intel-icl',
+        'instance_type' => $this->entity->get('instanceType') ?: 'intel-spr',
         'vendor' => $this->entity->get('vendor') ?: 'aws',
         'region' => $this->entity->get('region') ?: 'us-east-1',
         'min_replica' => (int) ($this->entity->get('minReplica') ?? 0),
