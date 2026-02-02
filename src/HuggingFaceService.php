@@ -1153,6 +1153,19 @@ class HuggingFaceService implements HuggingFaceServiceInterface {
     $task = $data['task'] ?? 'text-generation';
     $framework = $data['framework'] ?? 'pytorch';
 
+    // The API expects model.image with variant key: {"huggingface": {}} or
+    // {"custom": {"url": "...", "health_route": "...", "env": {...}}}.
+    $image_config = ['huggingface' => new \stdClass()];
+
+    if (!empty($data['custom_image'])) {
+      if (is_array($data['custom_image'])) {
+        $image_config = ['custom' => $data['custom_image']];
+      }
+      else {
+        $image_config = ['custom' => ['url' => $data['custom_image']]];
+      }
+    }
+
     $endpoint_config = [
       'name' => $data['name'] ?? '',
       'type' => $data['type'] ?? 'protected',
@@ -1169,6 +1182,7 @@ class HuggingFaceService implements HuggingFaceServiceInterface {
         'repository' => $data['repository'] ?? '',
         'framework' => $framework,
         'task' => $task,
+        'image' => $image_config,
       ],
       'provider' => [
         'region' => $data['region'] ?? 'us-east-1',
@@ -1184,19 +1198,6 @@ class HuggingFaceService implements HuggingFaceServiceInterface {
     // Add scale to zero timeout if specified.
     if (isset($data['scale_to_zero_timeout'])) {
       $endpoint_config['compute']['scaling']['scaleToZeroTimeout'] = $data['scale_to_zero_timeout'];
-    }
-
-    // Add custom_image at top level if specified (not inside model).
-    // custom_image should be an array with 'url', 'health_route', and 'env' keys.
-    if (!empty($data['custom_image'])) {
-      if (is_array($data['custom_image'])) {
-        $endpoint_config['custom_image'] = $data['custom_image'];
-      }
-      else {
-        $endpoint_config['custom_image'] = [
-          'url' => $data['custom_image'],
-        ];
-      }
     }
 
     $options[RequestOptions::JSON] = $endpoint_config;
@@ -1316,18 +1317,17 @@ class HuggingFaceService implements HuggingFaceServiceInterface {
     if (isset($data['revision'])) {
       $model['revision'] = $data['revision'];
     }
-    if (!empty($model)) {
-      $update_config['model'] = $model;
-    }
-
-    // Custom image at top level if specified.
+    // Custom image uses model.image with variant key format.
     if (isset($data['custom_image'])) {
       if (is_array($data['custom_image'])) {
-        $update_config['custom_image'] = $data['custom_image'];
+        $model['image'] = ['custom' => $data['custom_image']];
       }
       else {
-        $update_config['custom_image'] = ['url' => $data['custom_image']];
+        $model['image'] = ['custom' => ['url' => $data['custom_image']]];
       }
+    }
+    if (!empty($model)) {
+      $update_config['model'] = $model;
     }
 
     $options[RequestOptions::JSON] = $update_config;
