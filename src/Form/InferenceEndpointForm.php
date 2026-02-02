@@ -152,7 +152,7 @@ class InferenceEndpointForm extends EntityForm {
     $form['model_config'] = [
       '#type' => 'details',
       '#title' => $this->t('Model Configuration'),
-      '#open' => FALSE,
+      '#open' => TRUE,
     ];
 
     $form['model_config']['model'] = [
@@ -352,6 +352,11 @@ class InferenceEndpointForm extends EntityForm {
   protected function copyFormValuesToEntity($entity, array $form, FormStateInterface $form_state) {
     // Map form values to entity properties, handling nested form elements.
     $values = $form_state->getValues();
+
+    // Set the entity ID (required for config entities).
+    if (!empty($values['id'])) {
+      $entity->set('id', $values['id']);
+    }
 
     // Basic fields.
     $entity->set('label', $values['label'] ?? '');
