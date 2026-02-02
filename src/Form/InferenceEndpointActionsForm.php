@@ -234,7 +234,8 @@ class InferenceEndpointActionsForm extends FormBase {
 
     $namespace = $endpoint->get('namespace');
     $name = $endpoint->get('name');
-    $access_token = $endpoint->get('accessToken');
+    // Use entity token if set, otherwise fall back to global token.
+    $access_token = $endpoint->get('accessToken') ?: $this->service->getAccessToken();
 
     try {
       $result = $this->service->getInferenceEndpoint($namespace, $name, [
@@ -282,7 +283,7 @@ class InferenceEndpointActionsForm extends FormBase {
 
     $namespace = $endpoint->get('namespace');
     $name = $endpoint->get('name');
-    $access_token = $endpoint->get('accessToken');
+    $access_token = $endpoint->get('accessToken') ?: $this->service->getAccessToken();
 
     try {
       $result = $this->service->pauseInferenceEndpoint($namespace, $name, [
@@ -322,7 +323,7 @@ class InferenceEndpointActionsForm extends FormBase {
 
     $namespace = $endpoint->get('namespace');
     $name = $endpoint->get('name');
-    $access_token = $endpoint->get('accessToken');
+    $access_token = $endpoint->get('accessToken') ?: $this->service->getAccessToken();
 
     try {
       $result = $this->service->resumeInferenceEndpoint($namespace, $name, [
@@ -362,7 +363,7 @@ class InferenceEndpointActionsForm extends FormBase {
 
     $namespace = $endpoint->get('namespace');
     $name = $endpoint->get('name');
-    $access_token = $endpoint->get('accessToken');
+    $access_token = $endpoint->get('accessToken') ?: $this->service->getAccessToken();
 
     try {
       $result = $this->service->scaleToZeroInferenceEndpoint($namespace, $name, [

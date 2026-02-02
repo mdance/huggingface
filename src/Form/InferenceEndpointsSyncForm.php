@@ -59,12 +59,16 @@ class InferenceEndpointsSyncForm extends FormBase {
 
     $access_token = $values['access_token'] ?? $this->service->getAccessToken();
 
+    $has_global_token = !empty($this->service->getAccessToken());
+
     $form['credentials']['access_token'] = [
       '#type' => 'textfield',
       '#title' => $this->t('Access Token'),
       '#default_value' => $access_token,
-      '#description' => $this->t('Your HuggingFace API token with read access to Inference Endpoints. Get one from <a href="https://huggingface.co/settings/tokens" target="_blank">huggingface.co/settings/tokens</a>.'),
-      '#required' => TRUE,
+      '#description' => $has_global_token
+        ? $this->t('Using token from <a href="/admin/config/services/huggingface/settings">global settings</a>. You can override it here if needed.')
+        : $this->t('Your HuggingFace API token. Get one from <a href="https://huggingface.co/settings/tokens" target="_blank">huggingface.co/settings/tokens</a>, or configure it in <a href="/admin/config/services/huggingface/settings">global settings</a>.'),
+      '#required' => !$has_global_token,
     ];
 
     $namespace = $values['namespace'] ?? '';
@@ -220,7 +224,9 @@ class InferenceEndpointsSyncForm extends FormBase {
               $data['label'] = $result->name;
               $data['status'] = TRUE;
               $data['description'] = '';
-              $data['accessToken'] = $access_token;
+              // Only store access token if different from global setting.
+              $global_token = $this->service->getAccessToken();
+              $data['accessToken'] = ($access_token !== $global_token) ? $access_token : '';
               $data['namespace'] = $namespace;
               $data['type'] = $result->type ?? 'protected';
               $data['name'] = $result->name;

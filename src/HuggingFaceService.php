@@ -15,6 +15,8 @@ use Drupal\Core\StringTranslation\StringTranslationTrait;
 use Drupal\file\FileRepositoryInterface;
 use GuzzleHttp\ClientInterface;
 use GuzzleHttp\Cookie\CookieJar;
+use GuzzleHttp\Exception\ClientException;
+use GuzzleHttp\Exception\ServerException;
 use GuzzleHttp\RequestOptions;
 
 /**
@@ -1036,18 +1038,42 @@ class HuggingFaceService implements HuggingFaceServiceInterface {
 
     $url .= '/' . $parameters['namespace'];
 
-    $response = $this->client->get($url, $options);
+    try {
+      $response = $this->client->get($url, $options);
 
-    $status_code = $response->getStatusCode();
+      $status_code = $response->getStatusCode();
 
-    if ($status_code !== 200) {
-      throw new HuggingFaceException('An error occurred retrieving the inference endpoints.');
+      if ($status_code !== 200) {
+        $body = (string) $response->getBody();
+        \Drupal::logger('huggingface')->error('Failed to get inference endpoints for namespace @namespace. Status: @status, Response: @response', [
+          '@namespace' => $parameters['namespace'],
+          '@status' => $status_code,
+          '@response' => $body,
+        ]);
+        throw new HuggingFaceException('An error occurred retrieving the inference endpoints: ' . $body);
+      }
+
+      $body = (string) $response->getBody();
+      $this->addResponse('inference_endpoints', $body);
+
+      return json_decode($body);
     }
-
-    $body = (string) $response->getBody();
-    $this->addResponse('inference_endpoints', $body);
-
-    return json_decode($body);
+    catch (ClientException $e) {
+      $response_body = $e->hasResponse() ? (string) $e->getResponse()->getBody() : 'No response body';
+      \Drupal::logger('huggingface')->error('Client error getting inference endpoints for namespace @namespace: @error. Response: @response', [
+        '@namespace' => $parameters['namespace'],
+        '@error' => $e->getMessage(),
+        '@response' => $response_body,
+      ]);
+      throw new HuggingFaceException('Failed to get inference endpoints: ' . $response_body, 0, $e);
+    }
+    catch (\Exception $e) {
+      \Drupal::logger('huggingface')->error('Unexpected error getting inference endpoints for namespace @namespace: @error', [
+        '@namespace' => $parameters['namespace'],
+        '@error' => $e->getMessage(),
+      ]);
+      throw $e;
+    }
   }
 
   /**
@@ -1063,18 +1089,45 @@ class HuggingFaceService implements HuggingFaceServiceInterface {
     $access_token = $parameters['access_token'] ?? $this->getAccessToken();
     $options[RequestOptions::HEADERS]['authorization'] = 'Bearer ' . $access_token;
 
-    $response = $this->client->get($url, $options);
+    try {
+      $response = $this->client->get($url, $options);
 
-    $status_code = $response->getStatusCode();
+      $status_code = $response->getStatusCode();
 
-    if ($status_code !== 200) {
-      throw new HuggingFaceException('An error occurred retrieving the inference endpoint.');
+      if ($status_code !== 200) {
+        $body = (string) $response->getBody();
+        \Drupal::logger('huggingface')->error('Failed to get inference endpoint @namespace/@name. Status: @status, Response: @response', [
+          '@namespace' => $namespace,
+          '@name' => $name,
+          '@status' => $status_code,
+          '@response' => $body,
+        ]);
+        throw new HuggingFaceException('An error occurred retrieving the inference endpoint: ' . $body);
+      }
+
+      $body = (string) $response->getBody();
+      $this->addResponse('inference_endpoint_get', $body);
+
+      return json_decode($body);
     }
-
-    $body = (string) $response->getBody();
-    $this->addResponse('inference_endpoint_get', $body);
-
-    return json_decode($body);
+    catch (ClientException $e) {
+      $response_body = $e->hasResponse() ? (string) $e->getResponse()->getBody() : 'No response body';
+      \Drupal::logger('huggingface')->error('Client error getting inference endpoint @namespace/@name: @error. Response: @response', [
+        '@namespace' => $namespace,
+        '@name' => $name,
+        '@error' => $e->getMessage(),
+        '@response' => $response_body,
+      ]);
+      throw new HuggingFaceException('Failed to get inference endpoint: ' . $response_body, 0, $e);
+    }
+    catch (\Exception $e) {
+      \Drupal::logger('huggingface')->error('Unexpected error getting inference endpoint @namespace/@name: @error', [
+        '@namespace' => $namespace,
+        '@name' => $name,
+        '@error' => $e->getMessage(),
+      ]);
+      throw $e;
+    }
   }
 
   /**
@@ -1097,6 +1150,9 @@ class HuggingFaceService implements HuggingFaceServiceInterface {
     $options[RequestOptions::HEADERS]['authorization'] = 'Bearer ' . $access_token;
 
     // Build the endpoint configuration.
+    $task = $data['task'] ?? 'text-generation';
+    $framework = $data['framework'] ?? 'pytorch';
+
     $endpoint_config = [
       'name' => $data['name'] ?? '',
       'type' => $data['type'] ?? 'protected',
@@ -1111,8 +1167,8 @@ class HuggingFaceService implements HuggingFaceServiceInterface {
       ],
       'model' => [
         'repository' => $data['repository'] ?? '',
-        'framework' => $data['framework'] ?? 'pytorch',
-        'task' => $data['task'] ?? 'text-generation',
+        'framework' => $framework,
+        'task' => $task,
       ],
       'provider' => [
         'region' => $data['region'] ?? 'us-east-1',
@@ -1125,30 +1181,82 @@ class HuggingFaceService implements HuggingFaceServiceInterface {
       $endpoint_config['model']['revision'] = $data['revision'];
     }
 
-    // Add custom image if specified.
-    if (!empty($data['custom_image'])) {
-      $endpoint_config['model']['image'] = $data['custom_image'];
-    }
-
     // Add scale to zero timeout if specified.
     if (isset($data['scale_to_zero_timeout'])) {
       $endpoint_config['compute']['scaling']['scaleToZeroTimeout'] = $data['scale_to_zero_timeout'];
     }
 
-    $options[RequestOptions::JSON] = $endpoint_config;
-
-    $response = $this->client->post($url, $options);
-
-    $status_code = $response->getStatusCode();
-
-    if ($status_code !== 200 && $status_code !== 201 && $status_code !== 202) {
-      throw new HuggingFaceException('An error occurred creating the inference endpoint.');
+    // Add custom_image at top level if specified (not inside model).
+    // custom_image should be an array with 'url', 'health_route', and 'env' keys.
+    if (!empty($data['custom_image'])) {
+      if (is_array($data['custom_image'])) {
+        $endpoint_config['custom_image'] = $data['custom_image'];
+      }
+      else {
+        $endpoint_config['custom_image'] = [
+          'url' => $data['custom_image'],
+        ];
+      }
     }
 
-    $body = (string) $response->getBody();
-    $this->addResponse('inference_endpoint_create', $body);
+    $options[RequestOptions::JSON] = $endpoint_config;
 
-    return json_decode($body);
+    // Log the request payload for debugging.
+    if ($this->getLogging()) {
+      \Drupal::logger('huggingface')->debug('Creating inference endpoint: @url with payload: @payload', [
+        '@url' => $url,
+        '@payload' => json_encode($endpoint_config),
+      ]);
+    }
+
+    try {
+      $response = $this->client->post($url, $options);
+
+      $status_code = $response->getStatusCode();
+
+      if ($status_code !== 200 && $status_code !== 201 && $status_code !== 202) {
+        $body = (string) $response->getBody();
+        \Drupal::logger('huggingface')->error('Failed to create inference endpoint. Status: @status, Response: @response', [
+          '@status' => $status_code,
+          '@response' => $body,
+        ]);
+        throw new HuggingFaceException('An error occurred creating the inference endpoint: ' . $body);
+      }
+
+      $body = (string) $response->getBody();
+      $this->addResponse('inference_endpoint_create', $body);
+
+      if ($this->getLogging()) {
+        \Drupal::logger('huggingface')->info('Successfully created inference endpoint @name', [
+          '@name' => $data['name'] ?? 'unknown',
+        ]);
+      }
+
+      return json_decode($body);
+    }
+    catch (ClientException $e) {
+      $response_body = $e->hasResponse() ? (string) $e->getResponse()->getBody() : 'No response body';
+      \Drupal::logger('huggingface')->error('Client error creating inference endpoint: @error. Response: @response. Payload: @payload', [
+        '@error' => $e->getMessage(),
+        '@response' => $response_body,
+        '@payload' => json_encode($endpoint_config),
+      ]);
+      throw new HuggingFaceException('Failed to create inference endpoint: ' . $response_body, 0, $e);
+    }
+    catch (ServerException $e) {
+      $response_body = $e->hasResponse() ? (string) $e->getResponse()->getBody() : 'No response body';
+      \Drupal::logger('huggingface')->error('Server error creating inference endpoint: @error. Response: @response', [
+        '@error' => $e->getMessage(),
+        '@response' => $response_body,
+      ]);
+      throw new HuggingFaceException('HuggingFace server error: ' . $response_body, 0, $e);
+    }
+    catch (\Exception $e) {
+      \Drupal::logger('huggingface')->error('Unexpected error creating inference endpoint: @error', [
+        '@error' => $e->getMessage(),
+      ]);
+      throw $e;
+    }
   }
 
   /**
@@ -1208,27 +1316,77 @@ class HuggingFaceService implements HuggingFaceServiceInterface {
     if (isset($data['revision'])) {
       $model['revision'] = $data['revision'];
     }
-    if (isset($data['custom_image'])) {
-      $model['image'] = $data['custom_image'];
-    }
     if (!empty($model)) {
       $update_config['model'] = $model;
     }
 
-    $options[RequestOptions::JSON] = $update_config;
-
-    $response = $this->client->request('PUT', $url, $options);
-
-    $status_code = $response->getStatusCode();
-
-    if ($status_code !== 200 && $status_code !== 202) {
-      throw new HuggingFaceException('An error occurred updating the inference endpoint.');
+    // Custom image at top level if specified.
+    if (isset($data['custom_image'])) {
+      if (is_array($data['custom_image'])) {
+        $update_config['custom_image'] = $data['custom_image'];
+      }
+      else {
+        $update_config['custom_image'] = ['url' => $data['custom_image']];
+      }
     }
 
-    $body = (string) $response->getBody();
-    $this->addResponse('inference_endpoint_update', $body);
+    $options[RequestOptions::JSON] = $update_config;
 
-    return json_decode($body);
+    // Log the request payload for debugging.
+    if ($this->getLogging()) {
+      \Drupal::logger('huggingface')->debug('Updating inference endpoint @namespace/@name with payload: @payload', [
+        '@namespace' => $namespace,
+        '@name' => $name,
+        '@payload' => json_encode($update_config),
+      ]);
+    }
+
+    try {
+      $response = $this->client->request('PUT', $url, $options);
+
+      $status_code = $response->getStatusCode();
+
+      if ($status_code !== 200 && $status_code !== 202) {
+        $body = (string) $response->getBody();
+        \Drupal::logger('huggingface')->error('Failed to update inference endpoint @namespace/@name. Status: @status, Response: @response', [
+          '@namespace' => $namespace,
+          '@name' => $name,
+          '@status' => $status_code,
+          '@response' => $body,
+        ]);
+        throw new HuggingFaceException('An error occurred updating the inference endpoint: ' . $body);
+      }
+
+      $body = (string) $response->getBody();
+      $this->addResponse('inference_endpoint_update', $body);
+
+      if ($this->getLogging()) {
+        \Drupal::logger('huggingface')->info('Successfully updated inference endpoint @namespace/@name', [
+          '@namespace' => $namespace,
+          '@name' => $name,
+        ]);
+      }
+
+      return json_decode($body);
+    }
+    catch (ClientException $e) {
+      $response_body = $e->hasResponse() ? (string) $e->getResponse()->getBody() : 'No response body';
+      \Drupal::logger('huggingface')->error('Client error updating inference endpoint @namespace/@name: @error. Response: @response', [
+        '@namespace' => $namespace,
+        '@name' => $name,
+        '@error' => $e->getMessage(),
+        '@response' => $response_body,
+      ]);
+      throw new HuggingFaceException('Failed to update inference endpoint: ' . $response_body, 0, $e);
+    }
+    catch (\Exception $e) {
+      \Drupal::logger('huggingface')->error('Unexpected error updating inference endpoint @namespace/@name: @error', [
+        '@namespace' => $namespace,
+        '@name' => $name,
+        '@error' => $e->getMessage(),
+      ]);
+      throw $e;
+    }
   }
 
   /**
@@ -1244,17 +1402,58 @@ class HuggingFaceService implements HuggingFaceServiceInterface {
     $access_token = $parameters['access_token'] ?? $this->getAccessToken();
     $options[RequestOptions::HEADERS]['authorization'] = 'Bearer ' . $access_token;
 
-    $response = $this->client->delete($url, $options);
-
-    $status_code = $response->getStatusCode();
-
-    if ($status_code !== 200 && $status_code !== 202 && $status_code !== 204) {
-      throw new HuggingFaceException('An error occurred deleting the inference endpoint.');
+    if ($this->getLogging()) {
+      \Drupal::logger('huggingface')->debug('Deleting inference endpoint @namespace/@name', [
+        '@namespace' => $namespace,
+        '@name' => $name,
+      ]);
     }
 
-    $this->addResponse('inference_endpoint_delete', json_encode(['namespace' => $namespace, 'name' => $name]));
+    try {
+      $response = $this->client->delete($url, $options);
 
-    return TRUE;
+      $status_code = $response->getStatusCode();
+
+      if ($status_code !== 200 && $status_code !== 202 && $status_code !== 204) {
+        $body = (string) $response->getBody();
+        \Drupal::logger('huggingface')->error('Failed to delete inference endpoint @namespace/@name. Status: @status, Response: @response', [
+          '@namespace' => $namespace,
+          '@name' => $name,
+          '@status' => $status_code,
+          '@response' => $body,
+        ]);
+        throw new HuggingFaceException('An error occurred deleting the inference endpoint: ' . $body);
+      }
+
+      $this->addResponse('inference_endpoint_delete', json_encode(['namespace' => $namespace, 'name' => $name]));
+
+      if ($this->getLogging()) {
+        \Drupal::logger('huggingface')->info('Successfully deleted inference endpoint @namespace/@name', [
+          '@namespace' => $namespace,
+          '@name' => $name,
+        ]);
+      }
+
+      return TRUE;
+    }
+    catch (ClientException $e) {
+      $response_body = $e->hasResponse() ? (string) $e->getResponse()->getBody() : 'No response body';
+      \Drupal::logger('huggingface')->error('Client error deleting inference endpoint @namespace/@name: @error. Response: @response', [
+        '@namespace' => $namespace,
+        '@name' => $name,
+        '@error' => $e->getMessage(),
+        '@response' => $response_body,
+      ]);
+      throw new HuggingFaceException('Failed to delete inference endpoint: ' . $response_body, 0, $e);
+    }
+    catch (\Exception $e) {
+      \Drupal::logger('huggingface')->error('Unexpected error deleting inference endpoint @namespace/@name: @error', [
+        '@namespace' => $namespace,
+        '@name' => $name,
+        '@error' => $e->getMessage(),
+      ]);
+      throw $e;
+    }
   }
 
   /**

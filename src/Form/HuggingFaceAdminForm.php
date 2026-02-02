@@ -56,22 +56,52 @@ class HuggingFaceAdminForm extends ConfigFormBase {
    * {@inheritdoc}
    */
   public function buildForm(array $form, FormStateInterface $form_state) {
-    $form['access_token'] = [
+    $form['intro'] = [
+      '#type' => 'markup',
+      '#markup' => '<p>' . $this->t('Configure global settings for HuggingFace integration. These settings are used as defaults throughout the module.') . '</p>',
+    ];
+
+    $form['authentication'] = [
+      '#type' => 'details',
+      '#title' => $this->t('Authentication'),
+      '#open' => TRUE,
+    ];
+
+    $form['authentication']['access_token'] = [
       '#type' => 'textfield',
       '#title' => $this->t('Access Token'),
       '#default_value' => $this->service->getAccessToken(),
+      '#description' => $this->t('Your HuggingFace API access token. Get one from <a href="https://huggingface.co/settings/tokens" target="_blank">huggingface.co/settings/tokens</a>. This token is used as the default for all HuggingFace API requests unless overridden per-endpoint.'),
+      '#maxlength' => 255,
     ];
 
-    $form['url'] = [
-      '#type' => 'textfield',
-      '#title' => $this->t('URL'),
+    $form['hosted_inference'] = [
+      '#type' => 'details',
+      '#title' => $this->t('Hosted Inference API'),
+      '#description' => $this->t('Settings for the free HuggingFace Hosted Inference API. This is different from dedicated Inference Endpoints.'),
+      '#open' => TRUE,
+    ];
+
+    $form['hosted_inference']['url'] = [
+      '#type' => 'url',
+      '#title' => $this->t('Inference API URL'),
       '#default_value' => $this->service->getUrl(),
+      '#description' => $this->t('The URL for the Hosted Inference API. Typically <code>https://api-inference.huggingface.co/models/MODEL_NAME</code>. Used by the Test Endpoint form for running inference on public models. Leave empty if you only use dedicated Inference Endpoints.'),
+      '#placeholder' => 'https://api-inference.huggingface.co/models/gpt2',
+      '#maxlength' => 512,
     ];
 
-    $form['logging'] = [
+    $form['advanced'] = [
+      '#type' => 'details',
+      '#title' => $this->t('Advanced'),
+      '#open' => FALSE,
+    ];
+
+    $form['advanced']['logging'] = [
       '#type' => 'checkbox',
-      '#title' => $this->t('Enable Logging'),
+      '#title' => $this->t('Enable API Logging'),
       '#default_value' => $this->service->getLogging(),
+      '#description' => $this->t('When enabled, all API responses are logged to the database for debugging purposes. Disable in production to reduce database size.'),
     ];
 
     $form = parent::buildForm($form, $form_state);
