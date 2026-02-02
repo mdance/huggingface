@@ -46,24 +46,42 @@ class InferenceEndpointsSyncForm extends FormBase {
   public function buildForm(array $form, FormStateInterface $form_state) {
     $values = $form_state->getValues();
 
-    $key = 'access_token';
+    $form['intro'] = [
+      '#type' => 'markup',
+      '#markup' => '<p>' . $this->t('Import your HuggingFace Inference Endpoints into Drupal. Enter your credentials below, then select the endpoints you want to sync.') . '</p>',
+    ];
 
-    $access_token = $values[$key] ?? $this->service->getAccessToken();
+    $form['credentials'] = [
+      '#type' => 'details',
+      '#title' => $this->t('HuggingFace Credentials'),
+      '#open' => TRUE,
+    ];
 
-    $form[$key] = [
+    $access_token = $values['access_token'] ?? $this->service->getAccessToken();
+
+    $form['credentials']['access_token'] = [
       '#type' => 'textfield',
       '#title' => $this->t('Access Token'),
       '#default_value' => $access_token,
+      '#description' => $this->t('Your HuggingFace API token with read access to Inference Endpoints. Get one from <a href="https://huggingface.co/settings/tokens" target="_blank">huggingface.co/settings/tokens</a>.'),
+      '#required' => TRUE,
     ];
 
-    $key = 'namespace';
+    $namespace = $values['namespace'] ?? '';
 
-    $namespace = $values[$key] ?? '';
-
-    $form[$key] = [
+    $form['credentials']['namespace'] = [
       '#type' => 'textfield',
       '#title' => $this->t('Namespace'),
       '#default_value' => $namespace,
+      '#description' => $this->t('Your HuggingFace username or organization name. This is the namespace where your Inference Endpoints are deployed.'),
+      '#required' => TRUE,
+    ];
+
+    $form['credentials']['fetch'] = [
+      '#type' => 'submit',
+      '#value' => $this->t('Fetch Endpoints'),
+      '#submit' => ['::fetchEndpoints'],
+      '#limit_validation_errors' => [['access_token'], ['namespace']],
     ];
 
     if (!empty($namespace)) {
@@ -72,60 +90,97 @@ class InferenceEndpointsSyncForm extends FormBase {
         'namespace' => $namespace,
       ];
 
+      $error_message = NULL;
+
       try {
         $results = $this->service->getInferenceEndpoints($parameters);
-      } catch (\Exception $e) {}
-
-      $header = [];
-
-      $header['type'] = $this->t('Type');
-      $header['name'] = $this->t('Name');
-      $header['model'] = $this->t('Model');
-      $header['task'] = $this->t('Task');
-      $header['status'] = $this->t('Status');
-      $header['url'] = $this->t('URL');
-      $header['account_id'] = $this->t('Account ID');
-
-      $items = $results->items ?? [];
-
-      $options = [];
-
-      foreach ($items as $item) {
-        $option = [];
-
-        $name = $item->name;
-
-        $option['type'] = $item->type;
-        $option['name'] = $name;
-        $option['model'] = $item->model->repository;
-        $option['task'] = $item->model->task;
-        $option['status'] = $item->status->state;
-        $option['url'] = $item->status->url ?? '';
-        $option['account_id'] = $item->accountId ?? '';
-
-        $options[$name] = $option;
+      }
+      catch (\Exception $e) {
+        $error_message = $e->getMessage();
+        $results = NULL;
       }
 
-      $form['items'] = [
-        '#type' => 'tableselect',
-        '#header' => $header,
-        '#options' => $options,
-        '#empty' => $this->t('There are no inference endpoints.'),
-      ];
+      if ($error_message) {
+        $form['error'] = [
+          '#type' => 'markup',
+          '#markup' => '<div class="messages messages--error">' . $this->t('Failed to fetch endpoints: @error', ['@error' => $error_message]) . '</div>',
+        ];
+      }
+      else {
+        $header = [
+          'type' => $this->t('Type'),
+          'name' => $this->t('Name'),
+          'model' => $this->t('Model'),
+          'task' => $this->t('Task'),
+          'status' => $this->t('State'),
+          'url' => $this->t('URL'),
+        ];
+
+        $items = $results->items ?? [];
+        $options = [];
+
+        foreach ($items as $item) {
+          $name = $item->name;
+          $state = $item->status->state ?? 'unknown';
+
+          // Add visual indicator for state.
+          $state_class = match (strtolower($state)) {
+            'running' => 'color-success',
+            'paused', 'scaledtozero' => 'color-warning',
+            'failed' => 'color-error',
+            default => '',
+          };
+
+          $options[$name] = [
+            'type' => $item->type ?? 'protected',
+            'name' => $name,
+            'model' => $item->model->repository ?? '',
+            'task' => $item->model->task ?? '',
+            'status' => [
+              'data' => ['#markup' => '<span class="' . $state_class . '">' . $state . '</span>'],
+            ],
+            'url' => $item->status->url ?? $this->t('Not available'),
+          ];
+        }
+
+        $form['endpoints'] = [
+          '#type' => 'details',
+          '#title' => $this->t('Available Endpoints (@count)', ['@count' => count($options)]),
+          '#open' => TRUE,
+        ];
+
+        $form['endpoints']['help'] = [
+          '#type' => 'markup',
+          '#markup' => '<p>' . $this->t('Select the endpoints you want to import. Existing endpoints with the same ID will be skipped.') . '</p>',
+        ];
+
+        $form['endpoints']['items'] = [
+          '#type' => 'tableselect',
+          '#header' => $header,
+          '#options' => $options,
+          '#empty' => $this->t('No inference endpoints found in this namespace. Create endpoints at <a href="https://ui.endpoints.huggingface.co" target="_blank">ui.endpoints.huggingface.co</a>.'),
+        ];
+      }
     }
 
     $form['actions'] = [
       '#type' => 'actions',
     ];
 
-    $actions = &$form['actions'];
-
-    $actions['submit'] = [
+    $form['actions']['submit'] = [
       '#type' => 'submit',
-      '#value' => $this->t('Submit'),
+      '#value' => $this->t('Import Selected Endpoints'),
+      '#button_type' => 'primary',
     ];
 
     return $form;
+  }
+
+  /**
+   * Submit handler to fetch endpoints without full form submission.
+   */
+  public function fetchEndpoints(array &$form, FormStateInterface $form_state) {
+    $form_state->setRebuild();
   }
 
   /**

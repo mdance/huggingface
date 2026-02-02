@@ -56,76 +56,155 @@ class InferenceEndpointActionsForm extends FormBase {
 
     if (!$endpoint) {
       $form['error'] = [
-        '#markup' => $this->t('Inference endpoint not found.'),
+        '#markup' => '<div class="messages messages--error">' . $this->t('Inference endpoint configuration not found.') . '</div>',
       ];
       return $form;
     }
 
+    $state = strtolower($endpoint->get('state') ?: '');
+
+    // Determine state styling.
+    $state_class = match ($state) {
+      'running' => 'color-success',
+      'paused' => 'color-warning',
+      'scaledtozero', 'scaled_to_zero' => 'color-warning',
+      'initializing', 'pending', 'updating' => 'messages--status',
+      'failed' => 'color-error',
+      default => '',
+    };
+
+    $state_display = $endpoint->get('state') ?: $this->t('Unknown');
+
+    // Endpoint Information.
     $form['info'] = [
       '#type' => 'details',
       '#title' => $this->t('Endpoint Information'),
       '#open' => TRUE,
     ];
 
-    $form['info']['name'] = [
-      '#type' => 'item',
-      '#title' => $this->t('Name'),
-      '#markup' => $endpoint->get('name'),
+    $form['info']['status_banner'] = [
+      '#type' => 'markup',
+      '#markup' => '<div class="' . $state_class . '" style="padding: 10px; margin-bottom: 15px; border-radius: 4px;"><strong>' . $this->t('Status:') . '</strong> ' . $state_display . '</div>',
     ];
 
-    $form['info']['namespace'] = [
-      '#type' => 'item',
-      '#title' => $this->t('Namespace'),
-      '#markup' => $endpoint->get('namespace'),
+    $form['info']['details'] = [
+      '#type' => 'table',
+      '#header' => [],
+      '#rows' => [
+        [
+          ['data' => $this->t('Name'), 'header' => TRUE],
+          $endpoint->get('name') ?: '-',
+        ],
+        [
+          ['data' => $this->t('Namespace'), 'header' => TRUE],
+          $endpoint->get('namespace') ?: '-',
+        ],
+        [
+          ['data' => $this->t('Model'), 'header' => TRUE],
+          $endpoint->get('model') ?: '-',
+        ],
+        [
+          ['data' => $this->t('Task'), 'header' => TRUE],
+          $endpoint->get('task') ?: '-',
+        ],
+        [
+          ['data' => $this->t('Min/Max Replicas'), 'header' => TRUE],
+          ($endpoint->get('minReplica') ?? '0') . ' / ' . ($endpoint->get('maxReplica') ?? '1'),
+        ],
+        [
+          ['data' => $this->t('URL'), 'header' => TRUE],
+          $endpoint->get('url') ? ['data' => ['#markup' => '<a href="' . $endpoint->get('url') . '" target="_blank">' . $endpoint->get('url') . '</a>']] : $this->t('Not available (endpoint may be paused)'),
+        ],
+      ],
     ];
 
-    $form['info']['state'] = [
-      '#type' => 'item',
-      '#title' => $this->t('Current State'),
-      '#markup' => $endpoint->get('state') ?: $this->t('Unknown'),
+    // Actions section.
+    $form['lifecycle'] = [
+      '#type' => 'details',
+      '#title' => $this->t('Lifecycle Management'),
+      '#open' => TRUE,
     ];
 
-    $form['info']['url'] = [
-      '#type' => 'item',
-      '#title' => $this->t('URL'),
-      '#markup' => $endpoint->get('url') ?: $this->t('Not available'),
+    $form['lifecycle']['description'] = [
+      '#type' => 'markup',
+      '#markup' => '<p>' . $this->t('Manage the operational state of your HuggingFace Inference Endpoint. Changes are applied directly to the HuggingFace API.') . '</p>',
     ];
 
-    // Refresh button to get current status.
-    $form['actions'] = [
+    $form['lifecycle']['actions'] = [
       '#type' => 'actions',
     ];
 
-    $form['actions']['refresh'] = [
+    $form['lifecycle']['actions']['refresh'] = [
       '#type' => 'submit',
       '#value' => $this->t('Refresh Status'),
       '#submit' => ['::refreshStatus'],
+      '#attributes' => ['title' => $this->t('Fetch the latest status from HuggingFace API')],
     ];
 
-    $state = strtolower($endpoint->get('state') ?: '');
-
     // Show appropriate action buttons based on current state.
-    if ($state === 'running' || $state === 'scaled_to_zero' || $state === 'scaledtozero') {
-      $form['actions']['pause'] = [
-        '#type' => 'submit',
-        '#value' => $this->t('Pause Endpoint'),
-        '#submit' => ['::pauseEndpoint'],
-        '#attributes' => ['class' => ['button--danger']],
-      ];
-
-      $form['actions']['scale_to_zero'] = [
+    if ($state === 'running') {
+      $form['lifecycle']['actions']['scale_to_zero'] = [
         '#type' => 'submit',
         '#value' => $this->t('Scale to Zero'),
         '#submit' => ['::scaleToZero'],
+        '#attributes' => ['title' => $this->t('Scale down to zero replicas. Endpoint will auto-start on next request (cold start delay).')],
+      ];
+
+      $form['lifecycle']['actions']['pause'] = [
+        '#type' => 'submit',
+        '#value' => $this->t('Pause Endpoint'),
+        '#submit' => ['::pauseEndpoint'],
+        '#attributes' => [
+          'class' => ['button--danger'],
+          'title' => $this->t('Fully pause the endpoint. No charges while paused. Requires manual resume.'),
+        ],
+      ];
+
+      $form['lifecycle']['help'] = [
+        '#type' => 'markup',
+        '#markup' => '<div class="description" style="margin-top: 15px;"><strong>' . $this->t('Tip:') . '</strong> ' . $this->t('Use "Scale to Zero" to save costs while keeping the endpoint ready for auto-start. Use "Pause" for longer periods when you don\'t need the endpoint.') . '</div>',
       ];
     }
+    elseif ($state === 'scaledtozero' || $state === 'scaled_to_zero') {
+      $form['lifecycle']['actions']['pause'] = [
+        '#type' => 'submit',
+        '#value' => $this->t('Pause Endpoint'),
+        '#submit' => ['::pauseEndpoint'],
+        '#attributes' => [
+          'class' => ['button--danger'],
+          'title' => $this->t('Fully pause the endpoint instead of scale-to-zero.'),
+        ],
+      ];
 
-    if ($state === 'paused') {
-      $form['actions']['resume'] = [
+      $form['lifecycle']['help'] = [
+        '#type' => 'markup',
+        '#markup' => '<div class="description" style="margin-top: 15px;">' . $this->t('The endpoint is scaled to zero and will automatically start when it receives a request. There may be a cold start delay of 30-60 seconds.') . '</div>',
+      ];
+    }
+    elseif ($state === 'paused') {
+      $form['lifecycle']['actions']['resume'] = [
         '#type' => 'submit',
         '#value' => $this->t('Resume Endpoint'),
         '#submit' => ['::resumeEndpoint'],
         '#button_type' => 'primary',
+        '#attributes' => ['title' => $this->t('Start the endpoint. This may take a few minutes.')],
+      ];
+
+      $form['lifecycle']['help'] = [
+        '#type' => 'markup',
+        '#markup' => '<div class="description" style="margin-top: 15px;">' . $this->t('The endpoint is paused and not incurring charges. Click "Resume Endpoint" to start it. Startup typically takes 2-5 minutes.') . '</div>',
+      ];
+    }
+    elseif (in_array($state, ['initializing', 'pending', 'updating'])) {
+      $form['lifecycle']['help'] = [
+        '#type' => 'markup',
+        '#markup' => '<div class="messages messages--status" style="margin-top: 15px;">' . $this->t('The endpoint is currently starting up or updating. Please wait and refresh the status.') . '</div>',
+      ];
+    }
+    elseif ($state === 'failed') {
+      $form['lifecycle']['help'] = [
+        '#type' => 'markup',
+        '#markup' => '<div class="messages messages--error" style="margin-top: 15px;">' . $this->t('The endpoint has failed. Check the HuggingFace dashboard for error details. You may need to recreate the endpoint.') . '</div>',
       ];
     }
 
