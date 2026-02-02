@@ -4,6 +4,7 @@ namespace Drupal\huggingface;
 
 use Drupal\Core\Config\Entity\ConfigEntityListBuilder;
 use Drupal\Core\Entity\EntityInterface;
+use Drupal\Core\Url;
 
 /**
  * Provides a listing of inference endpoints.
@@ -15,8 +16,10 @@ class InferenceEndpointListBuilder extends ConfigEntityListBuilder {
    */
   public function buildHeader() {
     $header['label'] = $this->t('Label');
-    $header['id'] = $this->t('Machine name');
-    $header['status'] = $this->t('Status');
+    $header['namespace'] = $this->t('Namespace');
+    $header['model'] = $this->t('Model');
+    $header['state'] = $this->t('State');
+    $header['status'] = $this->t('Enabled');
     return $header + parent::buildHeader();
   }
 
@@ -24,11 +27,30 @@ class InferenceEndpointListBuilder extends ConfigEntityListBuilder {
    * {@inheritdoc}
    */
   public function buildRow(EntityInterface $entity) {
-    /** @var \Drupal\huggingface\InferenceEndpointInterface $entity */
+    /** @var \Drupal\huggingface\Entity\InferenceEndpoint $entity */
     $row['label'] = $entity->label();
-    $row['id'] = $entity->id();
-    $row['status'] = $entity->status() ? $this->t('Enabled') : $this->t('Disabled');
+    $row['namespace'] = $entity->get('namespace') ?? '';
+    $row['model'] = $entity->get('model') ?? '';
+    $row['state'] = $entity->get('state') ?? '';
+    $row['status'] = $entity->status() ? $this->t('Yes') : $this->t('No');
     return $row + parent::buildRow($entity);
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getDefaultOperations(EntityInterface $entity) {
+    $operations = parent::getDefaultOperations($entity);
+
+    $operations['actions'] = [
+      'title' => $this->t('Manage'),
+      'weight' => 5,
+      'url' => Url::fromRoute('entity.inference_endpoint.actions', [
+        'inference_endpoint' => $entity->id(),
+      ]),
+    ];
+
+    return $operations;
   }
 
 }

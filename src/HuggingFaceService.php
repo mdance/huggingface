@@ -43,16 +43,16 @@ class HuggingFaceService implements HuggingFaceServiceInterface {
    * Provides the constructor method.
    */
   public function __construct(
-        protected ConfigFactoryInterface $configFactory,
-        protected StateInterface $state,
-        protected ClientFactory $clientFactory,
-        protected FileSystemInterface $fileSystem,
-        protected FileRepositoryInterface $fileRepository,
-        protected EntityTypeManagerInterface $entityTypeManager,
-        protected Connection $connection,
-        protected CacheBackendInterface $cacheBackend,
-        protected ModuleHandlerInterface $moduleHandler,
-    ) {
+    protected ConfigFactoryInterface $configFactory,
+    protected StateInterface $state,
+    protected ClientFactory $clientFactory,
+    protected FileSystemInterface $fileSystem,
+    protected FileRepositoryInterface $fileRepository,
+    protected EntityTypeManagerInterface $entityTypeManager,
+    protected Connection $connection,
+    protected CacheBackendInterface $cacheBackend,
+    protected ModuleHandlerInterface $moduleHandler,
+  ) {
     $this->config = $configFactory->get(HuggingFaceConstants::SETTINGS);
 
     $cookie_jar = new CookieJar();
@@ -201,7 +201,7 @@ class HuggingFaceService implements HuggingFaceServiceInterface {
     $output['question_answering'] = 'deepset/roberta-base-squad2';
     $output['fill_mask'] = 'bert-base-uncased';
     $output['summarization'] = 'facebook/bart-large-cnn';
-    //$output['translation'] = 't5-base';
+    // $output['translation'] = 't5-base';
     $output['translation'] = 'Helsinki-NLP/opus-mt-ru-en';
     $output['text_to_text_generation'] = 'dbmdz/bert-large-cased-finetuned-conll03-english';
     $output['text_generation'] = 'gpt2';
@@ -1014,7 +1014,7 @@ class HuggingFaceService implements HuggingFaceServiceInterface {
   /**
    * {@inheritDoc}
    */
-  public function getInferenceEndpoints(array $parameters = []){
+  public function getInferenceEndpoints(array $parameters = []) {
     $url = HuggingFaceConstants::SCHEMA . '://' . HuggingFaceConstants::HOST . HuggingFaceConstants::PATH_ENDPOINTS;
 
     $options = [];
@@ -1048,6 +1048,245 @@ class HuggingFaceService implements HuggingFaceServiceInterface {
     $this->addResponse('inference_endpoints', $body);
 
     return json_decode($body);
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  public function getInferenceEndpoint(string $namespace, string $name, array $parameters = []) {
+    $url = HuggingFaceConstants::SCHEMA . '://' . HuggingFaceConstants::HOST . HuggingFaceConstants::PATH_ENDPOINTS;
+    $url .= '/' . $namespace . '/' . $name;
+
+    $options = [];
+    $options[RequestOptions::HEADERS] = $this->getHeaders();
+
+    $access_token = $parameters['access_token'] ?? $this->getAccessToken();
+    $options[RequestOptions::HEADERS]['authorization'] = 'Bearer ' . $access_token;
+
+    $response = $this->client->get($url, $options);
+
+    $status_code = $response->getStatusCode();
+
+    if ($status_code !== 200) {
+      throw new HuggingFaceException('An error occurred retrieving the inference endpoint.');
+    }
+
+    $body = (string) $response->getBody();
+    $this->addResponse('inference_endpoint_get', $body);
+
+    return json_decode($body);
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  public function createInferenceEndpoint(array $data, array $parameters = []) {
+    $namespace = $data['namespace'] ?? '';
+
+    if (empty($namespace)) {
+      throw new HuggingFaceException('The namespace is required to create an inference endpoint.');
+    }
+
+    $url = HuggingFaceConstants::SCHEMA . '://' . HuggingFaceConstants::HOST . HuggingFaceConstants::PATH_ENDPOINTS;
+    $url .= '/' . $namespace;
+
+    $options = [];
+    $options[RequestOptions::HEADERS] = $this->getHeaders();
+
+    $access_token = $parameters['access_token'] ?? $this->getAccessToken();
+    $options[RequestOptions::HEADERS]['authorization'] = 'Bearer ' . $access_token;
+
+    // Build the endpoint configuration.
+    $endpoint_config = [
+      'name' => $data['name'] ?? '',
+      'type' => $data['type'] ?? 'protected',
+      'compute' => [
+        'accelerator' => $data['accelerator'] ?? 'cpu',
+        'instanceSize' => $data['instance_size'] ?? 'x1',
+        'instanceType' => $data['instance_type'] ?? 'intel-icl',
+        'scaling' => [
+          'minReplica' => $data['min_replica'] ?? 0,
+          'maxReplica' => $data['max_replica'] ?? 1,
+        ],
+      ],
+      'model' => [
+        'repository' => $data['repository'] ?? '',
+        'framework' => $data['framework'] ?? 'pytorch',
+        'task' => $data['task'] ?? 'text-generation',
+      ],
+      'provider' => [
+        'region' => $data['region'] ?? 'us-east-1',
+        'vendor' => $data['vendor'] ?? 'aws',
+      ],
+    ];
+
+    // Add revision if specified.
+    if (!empty($data['revision'])) {
+      $endpoint_config['model']['revision'] = $data['revision'];
+    }
+
+    // Add custom image if specified.
+    if (!empty($data['custom_image'])) {
+      $endpoint_config['model']['image'] = $data['custom_image'];
+    }
+
+    // Add scale to zero timeout if specified.
+    if (isset($data['scale_to_zero_timeout'])) {
+      $endpoint_config['compute']['scaling']['scaleToZeroTimeout'] = $data['scale_to_zero_timeout'];
+    }
+
+    $options[RequestOptions::JSON] = $endpoint_config;
+
+    $response = $this->client->post($url, $options);
+
+    $status_code = $response->getStatusCode();
+
+    if ($status_code !== 200 && $status_code !== 201 && $status_code !== 202) {
+      throw new HuggingFaceException('An error occurred creating the inference endpoint.');
+    }
+
+    $body = (string) $response->getBody();
+    $this->addResponse('inference_endpoint_create', $body);
+
+    return json_decode($body);
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  public function updateInferenceEndpoint(string $namespace, string $name, array $data, array $parameters = []) {
+    $url = HuggingFaceConstants::SCHEMA . '://' . HuggingFaceConstants::HOST . HuggingFaceConstants::PATH_ENDPOINTS;
+    $url .= '/' . $namespace . '/' . $name;
+
+    $options = [];
+    $options[RequestOptions::HEADERS] = $this->getHeaders();
+
+    $access_token = $parameters['access_token'] ?? $this->getAccessToken();
+    $options[RequestOptions::HEADERS]['authorization'] = 'Bearer ' . $access_token;
+
+    // Build the update payload.
+    $update_config = [];
+
+    // Compute configuration updates.
+    $compute = [];
+    if (isset($data['accelerator'])) {
+      $compute['accelerator'] = $data['accelerator'];
+    }
+    if (isset($data['instance_size'])) {
+      $compute['instanceSize'] = $data['instance_size'];
+    }
+    if (isset($data['instance_type'])) {
+      $compute['instanceType'] = $data['instance_type'];
+    }
+    if (isset($data['min_replica']) || isset($data['max_replica'])) {
+      $compute['scaling'] = [];
+      if (isset($data['min_replica'])) {
+        $compute['scaling']['minReplica'] = $data['min_replica'];
+      }
+      if (isset($data['max_replica'])) {
+        $compute['scaling']['maxReplica'] = $data['max_replica'];
+      }
+      if (isset($data['scale_to_zero_timeout'])) {
+        $compute['scaling']['scaleToZeroTimeout'] = $data['scale_to_zero_timeout'];
+      }
+    }
+    if (!empty($compute)) {
+      $update_config['compute'] = $compute;
+    }
+
+    // Model configuration updates.
+    $model = [];
+    if (isset($data['repository'])) {
+      $model['repository'] = $data['repository'];
+    }
+    if (isset($data['framework'])) {
+      $model['framework'] = $data['framework'];
+    }
+    if (isset($data['task'])) {
+      $model['task'] = $data['task'];
+    }
+    if (isset($data['revision'])) {
+      $model['revision'] = $data['revision'];
+    }
+    if (isset($data['custom_image'])) {
+      $model['image'] = $data['custom_image'];
+    }
+    if (!empty($model)) {
+      $update_config['model'] = $model;
+    }
+
+    $options[RequestOptions::JSON] = $update_config;
+
+    $response = $this->client->request('PUT', $url, $options);
+
+    $status_code = $response->getStatusCode();
+
+    if ($status_code !== 200 && $status_code !== 202) {
+      throw new HuggingFaceException('An error occurred updating the inference endpoint.');
+    }
+
+    $body = (string) $response->getBody();
+    $this->addResponse('inference_endpoint_update', $body);
+
+    return json_decode($body);
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  public function deleteInferenceEndpoint(string $namespace, string $name, array $parameters = []) {
+    $url = HuggingFaceConstants::SCHEMA . '://' . HuggingFaceConstants::HOST . HuggingFaceConstants::PATH_ENDPOINTS;
+    $url .= '/' . $namespace . '/' . $name;
+
+    $options = [];
+    $options[RequestOptions::HEADERS] = $this->getHeaders();
+
+    $access_token = $parameters['access_token'] ?? $this->getAccessToken();
+    $options[RequestOptions::HEADERS]['authorization'] = 'Bearer ' . $access_token;
+
+    $response = $this->client->delete($url, $options);
+
+    $status_code = $response->getStatusCode();
+
+    if ($status_code !== 200 && $status_code !== 202 && $status_code !== 204) {
+      throw new HuggingFaceException('An error occurred deleting the inference endpoint.');
+    }
+
+    $this->addResponse('inference_endpoint_delete', json_encode(['namespace' => $namespace, 'name' => $name]));
+
+    return TRUE;
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  public function pauseInferenceEndpoint(string $namespace, string $name, array $parameters = []) {
+    // Pausing is done by setting min/max replicas to 0.
+    return $this->updateInferenceEndpoint($namespace, $name, [
+      'min_replica' => 0,
+      'max_replica' => 0,
+    ], $parameters);
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  public function resumeInferenceEndpoint(string $namespace, string $name, array $parameters = []) {
+    // Resuming is done by setting min/max replicas back to at least 1.
+    return $this->updateInferenceEndpoint($namespace, $name, [
+      'min_replica' => 1,
+      'max_replica' => 1,
+    ], $parameters);
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  public function scaleToZeroInferenceEndpoint(string $namespace, string $name, array $parameters = []) {
+    // Scale to zero sets min replica to 0 but keeps max replica > 0 for auto-scaling.
+    return $this->updateInferenceEndpoint($namespace, $name, [
+      'min_replica' => 0,
+    ], $parameters);
   }
 
 }

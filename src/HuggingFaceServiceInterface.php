@@ -2,8 +2,6 @@
 
 namespace Drupal\huggingface;
 
-use GuzzleHttp\RequestOptions;
-
 /**
  * Provides the HuggingFaceServiceInterface interface.
  */
@@ -281,9 +279,141 @@ interface HuggingFaceServiceInterface {
    * @param array $parameters
    *   An array of parameters.
    *
-   * @return array
-   *   The inference endpoints.
+   * @return object
+   *   The inference endpoints response.
    */
   public function getInferenceEndpoints(array $parameters = []);
+
+  /**
+   * Gets a single inference endpoint.
+   *
+   * @param string $namespace
+   *   The namespace.
+   * @param string $name
+   *   The endpoint name.
+   * @param array $parameters
+   *   Optional parameters including 'access_token'.
+   *
+   * @return object
+   *   The inference endpoint data.
+   *
+   * @throws \Drupal\huggingface\HuggingFaceException
+   */
+  public function getInferenceEndpoint(string $namespace, string $name, array $parameters = []);
+
+  /**
+   * Creates an inference endpoint.
+   *
+   * @param array $data
+   *   The endpoint configuration data including:
+   *   - namespace: The namespace for the endpoint.
+   *   - name: The endpoint name.
+   *   - type: The endpoint type (public, protected, private).
+   *   - repository: The model repository.
+   *   - framework: The ML framework (pytorch, tensorflow, etc.).
+   *   - task: The ML task type.
+   *   - accelerator: Hardware accelerator (cpu, gpu).
+   *   - instance_size: Instance size.
+   *   - instance_type: Instance type.
+   *   - region: Cloud region.
+   *   - vendor: Cloud vendor (aws, azure, gcp).
+   *   - min_replica: Minimum replicas.
+   *   - max_replica: Maximum replicas.
+   * @param array $parameters
+   *   Optional parameters including 'access_token'.
+   *
+   * @return object
+   *   The created endpoint data.
+   *
+   * @throws \Drupal\huggingface\HuggingFaceException
+   */
+  public function createInferenceEndpoint(array $data, array $parameters = []);
+
+  /**
+   * Updates an inference endpoint.
+   *
+   * @param string $namespace
+   *   The namespace.
+   * @param string $name
+   *   The endpoint name.
+   * @param array $data
+   *   The update data.
+   * @param array $parameters
+   *   Optional parameters including 'access_token'.
+   *
+   * @return object
+   *   The updated endpoint data.
+   *
+   * @throws \Drupal\huggingface\HuggingFaceException
+   */
+  public function updateInferenceEndpoint(string $namespace, string $name, array $data, array $parameters = []);
+
+  /**
+   * Deletes an inference endpoint.
+   *
+   * @param string $namespace
+   *   The namespace.
+   * @param string $name
+   *   The endpoint name.
+   * @param array $parameters
+   *   Optional parameters including 'access_token'.
+   *
+   * @return bool
+   *   TRUE if deleted successfully.
+   *
+   * @throws \Drupal\huggingface\HuggingFaceException
+   */
+  public function deleteInferenceEndpoint(string $namespace, string $name, array $parameters = []);
+
+  /**
+   * Pauses an inference endpoint.
+   *
+   * @param string $namespace
+   *   The namespace.
+   * @param string $name
+   *   The endpoint name.
+   * @param array $parameters
+   *   Optional parameters including 'access_token'.
+   *
+   * @return object
+   *   The updated endpoint data.
+   *
+   * @throws \Drupal\huggingface\HuggingFaceException
+   */
+  public function pauseInferenceEndpoint(string $namespace, string $name, array $parameters = []);
+
+  /**
+   * Resumes an inference endpoint.
+   *
+   * @param string $namespace
+   *   The namespace.
+   * @param string $name
+   *   The endpoint name.
+   * @param array $parameters
+   *   Optional parameters including 'access_token'.
+   *
+   * @return object
+   *   The updated endpoint data.
+   *
+   * @throws \Drupal\huggingface\HuggingFaceException
+   */
+  public function resumeInferenceEndpoint(string $namespace, string $name, array $parameters = []);
+
+  /**
+   * Scales an inference endpoint to zero.
+   *
+   * @param string $namespace
+   *   The namespace.
+   * @param string $name
+   *   The endpoint name.
+   * @param array $parameters
+   *   Optional parameters including 'access_token'.
+   *
+   * @return object
+   *   The updated endpoint data.
+   *
+   * @throws \Drupal\huggingface\HuggingFaceException
+   */
+  public function scaleToZeroInferenceEndpoint(string $namespace, string $name, array $parameters = []);
 
 }

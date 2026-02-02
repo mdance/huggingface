@@ -26,3 +26,70 @@ huggingface.inference_endpoint.*:
       type: string
     description:
       type: string
+      label: Description
+    status:
+      type: boolean
+      label: Status
+    accessToken:
+      type: string
+      label: Access Token
+    namespace:
+      type: string
+      label: Namespace
+    type:
+      type: string
+      label: Endpoint Type
+    name:
+      type: string
+      label: Endpoint Name
+    accountId:
+      type: string
+      label: Account ID
+    model:
+      type: string
+      label: Model Repository
+    framework:
+      type: string
+      label: ML Framework
+    revision:
+      type: string
+      label: Model Revision
+    task:
+      type: string
+      label: ML Task
+    state:
+      type: string
+      label: Endpoint State
+    url:
+      type: string
+      label: Endpoint URL
+    accelerator:
+      type: string
+      label: Accelerator
+    instanceSize:
+      type: string
+      label: Instance Size
+    instanceType:
+      type: string
+      label: Instance Type
+    region:
+      type: string
+      label: Cloud Region
+    vendor:
+      type: string
+      label: Cloud Vendor
+    minReplica:
+      type: integer
+      label: Minimum Replicas
+    maxReplica:
+      type: integer
+      label: Maximum Replicas
+    scaleToZeroTimeout:
+      type: integer
+      label: Scale to Zero Timeout
+    createdAt:
+      type: string
+      label: Created At
+    updatedAt:
+      type: string
+      label: Updated At

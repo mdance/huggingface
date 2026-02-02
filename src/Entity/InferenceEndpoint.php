@@ -27,7 +27,8 @@ use Drupal\huggingface\InferenceEndpointInterface;
  *       "info" = "Drupal\huggingface\Form\InferenceEndpointInfoForm",
  *       "logs" = "Drupal\huggingface\Form\InferenceEndpointLogsForm",
  *       "metrics" = "Drupal\huggingface\Form\InferenceEndpointMetricsForm",
- *       "sync" = "Drupal\huggingface\Form\InferenceEndpointsSyncForm"
+ *       "sync" = "Drupal\huggingface\Form\InferenceEndpointsSyncForm",
+ *       "actions" = "Drupal\huggingface\Form\InferenceEndpointActionsForm"
  *     }
  *   },
  *   config_prefix = "inference_endpoint",
@@ -55,8 +56,21 @@ use Drupal\huggingface\InferenceEndpointInterface;
  *     "name",
  *     "accountId",
  *     "model",
+ *     "framework",
+ *     "revision",
+ *     "task",
  *     "state",
- *     "url"
+ *     "url",
+ *     "accelerator",
+ *     "instanceSize",
+ *     "instanceType",
+ *     "region",
+ *     "vendor",
+ *     "minReplica",
+ *     "maxReplica",
+ *     "scaleToZeroTimeout",
+ *     "createdAt",
+ *     "updatedAt"
  *   }
  * )
  */
@@ -93,7 +107,7 @@ class InferenceEndpoint extends ConfigEntityBase implements InferenceEndpointInt
   /**
    * Provides the access token.
    */
-  protected string $accessToken;
+  protected ?string $accessToken;
 
   /**
    * Provides the namespace.
@@ -129,5 +143,70 @@ class InferenceEndpoint extends ConfigEntityBase implements InferenceEndpointInt
    * Provides the account ID.
    */
   protected ?string $accountId;
+
+  /**
+   * The ML framework.
+   */
+  protected ?string $framework;
+
+  /**
+   * The model revision.
+   */
+  protected ?string $revision;
+
+  /**
+   * The ML task.
+   */
+  protected ?string $task;
+
+  /**
+   * The accelerator type.
+   */
+  protected ?string $accelerator;
+
+  /**
+   * The instance size.
+   */
+  protected ?string $instanceSize;
+
+  /**
+   * The instance type.
+   */
+  protected ?string $instanceType;
+
+  /**
+   * The cloud region.
+   */
+  protected ?string $region;
+
+  /**
+   * The cloud vendor.
+   */
+  protected ?string $vendor;
+
+  /**
+   * The minimum replicas.
+   */
+  protected ?int $minReplica;
+
+  /**
+   * The maximum replicas.
+   */
+  protected ?int $maxReplica;
+
+  /**
+   * The scale to zero timeout in minutes.
+   */
+  protected ?int $scaleToZeroTimeout;
+
+  /**
+   * The creation timestamp.
+   */
+  protected ?string $createdAt;
+
+  /**
+   * The last update timestamp.
+   */
+  protected ?string $updatedAt;
 
 }

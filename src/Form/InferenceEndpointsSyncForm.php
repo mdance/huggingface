@@ -167,12 +167,35 @@ class InferenceEndpointsSyncForm extends FormBase {
               $data['description'] = '';
               $data['accessToken'] = $access_token;
               $data['namespace'] = $namespace;
-              $data['type'] = $result->type;
+              $data['type'] = $result->type ?? 'protected';
               $data['name'] = $result->name;
               $data['accountId'] = $result->accountId ?? '';
-              $data['model'] = $result->model->repository;
+              $data['model'] = $result->model->repository ?? '';
+              $data['framework'] = $result->model->framework ?? '';
+              $data['revision'] = $result->model->revision ?? '';
+              $data['task'] = $result->model->task ?? '';
               $data['state'] = $result->status->state ?? '';
               $data['url'] = $result->status->url ?? '';
+              $data['createdAt'] = $result->status->createdAt ?? '';
+              $data['updatedAt'] = $result->status->updatedAt ?? '';
+
+              // Compute configuration.
+              if (isset($result->compute)) {
+                $data['accelerator'] = $result->compute->accelerator ?? '';
+                $data['instanceSize'] = $result->compute->instanceSize ?? '';
+                $data['instanceType'] = $result->compute->instanceType ?? '';
+                if (isset($result->compute->scaling)) {
+                  $data['minReplica'] = $result->compute->scaling->minReplica ?? 0;
+                  $data['maxReplica'] = $result->compute->scaling->maxReplica ?? 1;
+                  $data['scaleToZeroTimeout'] = $result->compute->scaling->scaleToZeroTimeout ?? NULL;
+                }
+              }
+
+              // Provider configuration.
+              if (isset($result->provider)) {
+                $data['region'] = $result->provider->region ?? '';
+                $data['vendor'] = $result->provider->vendor ?? '';
+              }
 
               $entity = $storage->create($data);
 

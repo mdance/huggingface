@@ -59,3 +59,11 @@ entity.inference_endpoint.sync:
     _form: 'Drupal\huggingface\Form\InferenceEndpointsSyncForm'
   requirements:
     _permission: 'administer inference_endpoint'
+
+entity.inference_endpoint.actions:
+  path: '/admin/config/services/huggingface/inference-endpoints/{inference_endpoint}/actions'
+  defaults:
+    _title: 'Manage Endpoint'
+    _form: 'Drupal\huggingface\Form\InferenceEndpointActionsForm'
+  requirements:
+    _permission: 'administer inference_endpoint'
