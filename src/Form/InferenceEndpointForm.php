@@ -181,24 +181,48 @@ class InferenceEndpointForm extends EntityForm {
       '#default_value' => $this->entity->get('task') ?: '',
       '#options' => [
         '' => $this->t('- Auto-detect -'),
+        // NLP Tasks.
         'text-generation' => $this->t('Text Generation'),
+        'text2text-generation' => $this->t('Text-to-Text Generation'),
         'text-classification' => $this->t('Text Classification'),
         'token-classification' => $this->t('Token Classification (NER)'),
         'question-answering' => $this->t('Question Answering'),
+        'table-question-answering' => $this->t('Table Question Answering'),
+        'fill-mask' => $this->t('Fill Mask'),
         'summarization' => $this->t('Summarization'),
         'translation' => $this->t('Translation'),
-        'fill-mask' => $this->t('Fill Mask'),
-        'feature-extraction' => $this->t('Feature Extraction (Embeddings)'),
-        'sentence-similarity' => $this->t('Sentence Similarity'),
+        'conversational' => $this->t('Conversational'),
         'zero-shot-classification' => $this->t('Zero-Shot Classification'),
+        // Embeddings.
+        'feature-extraction' => $this->t('Feature Extraction'),
+        'sentence-similarity' => $this->t('Sentence Similarity'),
+        'sentence-embeddings' => $this->t('Sentence Embeddings'),
+        'ranking' => $this->t('Ranking / Reranking'),
+        // Vision Tasks.
         'image-classification' => $this->t('Image Classification'),
-        'object-detection' => $this->t('Object Detection'),
         'image-segmentation' => $this->t('Image Segmentation'),
+        'object-detection' => $this->t('Object Detection'),
+        'zero-shot-object-detection' => $this->t('Zero-Shot Object Detection'),
+        'image-to-text' => $this->t('Image to Text (OCR/Captioning)'),
+        'image-to-image' => $this->t('Image to Image'),
+        'depth-estimation' => $this->t('Depth Estimation'),
+        'mask-generation' => $this->t('Mask Generation'),
+        // Multimodal Tasks.
+        'document-question-answering' => $this->t('Document Question Answering'),
+        'visual-question-answering' => $this->t('Visual Question Answering'),
+        'image-text-to-text' => $this->t('Image-Text to Text'),
+        // Generation Tasks.
         'text-to-image' => $this->t('Text to Image'),
-        'automatic-speech-recognition' => $this->t('Speech Recognition'),
+        'text-to-video' => $this->t('Text to Video'),
+        'text-to-speech' => $this->t('Text to Speech'),
+        // Audio Tasks.
+        'automatic-speech-recognition' => $this->t('Automatic Speech Recognition'),
         'audio-classification' => $this->t('Audio Classification'),
+        'audio-to-audio' => $this->t('Audio to Audio'),
+        // Custom.
+        'custom' => $this->t('Custom'),
       ],
-      '#description' => $this->t('The ML task this endpoint performs. Auto-detect uses the model\'s default task.'),
+      '#description' => $this->t('The ML task this endpoint performs. Auto-detect uses the model default task. Note: Not all tasks are supported by default containers.'),
     ];
 
     $form['model_config']['revision'] = [
