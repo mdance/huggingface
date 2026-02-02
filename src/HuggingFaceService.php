@@ -1502,7 +1502,7 @@ class HuggingFaceService implements HuggingFaceServiceInterface {
     }
 
     // Build the URL for the Hosted Inference API.
-    $url = 'https://api-inference.huggingface.co/models/' . $model;
+    $url = 'https://router.huggingface.co/models/' . $model;
 
     $options = [];
     $options[RequestOptions::HEADERS] = [
