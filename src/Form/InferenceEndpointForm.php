@@ -376,48 +376,61 @@ class InferenceEndpointForm extends EntityForm {
   /**
    * {@inheritdoc}
    */
+  public function validateForm(array &$form, FormStateInterface $form_state) {
+    parent::validateForm($form, $form_state);
+
+    $is_new = $this->entity->isNew();
+    $create_on_huggingface = $form_state->getValue('create_on_huggingface');
+
+    // Validate required fields for HuggingFace API creation.
+    if ($is_new && $create_on_huggingface) {
+      $access_token = $form_state->getValue('access_token') ?: $this->huggingFaceService->getAccessToken();
+
+      if (empty($access_token)) {
+        $form_state->setErrorByName('access_token', $this->t('Access token is required. Configure it in <a href="/admin/config/services/huggingface/settings">global settings</a> or provide one for this endpoint.'));
+      }
+
+      if (empty($form_state->getValue('model'))) {
+        $form_state->setErrorByName('model', $this->t('Model repository is required when creating an endpoint on HuggingFace.'));
+      }
+    }
+  }
+
+  /**
+   * {@inheritdoc}
+   */
   public function save(array $form, FormStateInterface $form_state) {
     $is_new = $this->entity->isNew();
     $create_on_huggingface = $form_state->getValue('create_on_huggingface');
 
     // If creating a new endpoint on HuggingFace, call the API first.
     if ($is_new && $create_on_huggingface) {
+      $access_token = $this->entity->get('accessToken') ?: $this->huggingFaceService->getAccessToken();
+      $namespace = $this->entity->get('namespace');
+      $name = $this->entity->get('name');
+
+      // Build the endpoint configuration for the API.
+      $endpoint_data = [
+        'namespace' => $namespace,
+        'name' => $name,
+        'type' => $this->entity->get('type') ?: 'protected',
+        'repository' => $this->entity->get('model'),
+        'framework' => $this->entity->get('framework') ?: 'pytorch',
+        'task' => $this->entity->get('task') ?: 'text-generation',
+        'accelerator' => $this->entity->get('accelerator') ?: 'cpu',
+        'instance_size' => $this->entity->get('instanceSize') ?: 'x1',
+        'instance_type' => $this->entity->get('instanceType') ?: 'intel-icl',
+        'vendor' => $this->entity->get('vendor') ?: 'aws',
+        'region' => $this->entity->get('region') ?: 'us-east-1',
+        'min_replica' => (int) ($this->entity->get('minReplica') ?? 0),
+        'max_replica' => (int) ($this->entity->get('maxReplica') ?? 1),
+      ];
+
+      if ($revision = $this->entity->get('revision')) {
+        $endpoint_data['revision'] = $revision;
+      }
+
       try {
-        $access_token = $this->entity->get('accessToken') ?: $this->huggingFaceService->getAccessToken();
-        $namespace = $this->entity->get('namespace');
-        $name = $this->entity->get('name');
-
-        if (empty($access_token)) {
-          $this->messenger()->addError($this->t('Access token is required. Configure it in <a href="/admin/config/services/huggingface/settings">global settings</a> or provide one for this endpoint.'));
-          return FALSE;
-        }
-
-        if (empty($namespace) || empty($name)) {
-          $this->messenger()->addError($this->t('Namespace and endpoint name are required.'));
-          return FALSE;
-        }
-
-        // Build the endpoint configuration for the API.
-        $endpoint_data = [
-          'namespace' => $namespace,
-          'name' => $name,
-          'type' => $this->entity->get('type') ?: 'protected',
-          'repository' => $this->entity->get('model'),
-          'framework' => $this->entity->get('framework') ?: 'pytorch',
-          'task' => $this->entity->get('task') ?: 'text-generation',
-          'accelerator' => $this->entity->get('accelerator') ?: 'cpu',
-          'instance_size' => $this->entity->get('instanceSize') ?: 'x1',
-          'instance_type' => $this->entity->get('instanceType') ?: 'intel-icl',
-          'vendor' => $this->entity->get('vendor') ?: 'aws',
-          'region' => $this->entity->get('region') ?: 'us-east-1',
-          'min_replica' => (int) ($this->entity->get('minReplica') ?? 0),
-          'max_replica' => (int) ($this->entity->get('maxReplica') ?? 1),
-        ];
-
-        if ($revision = $this->entity->get('revision')) {
-          $endpoint_data['revision'] = $revision;
-        }
-
         // Create the endpoint on HuggingFace.
         $result = $this->huggingFaceService->createInferenceEndpoint($endpoint_data, [
           'access_token' => $access_token,
@@ -435,9 +448,11 @@ class InferenceEndpointForm extends EntityForm {
         $this->messenger()->addStatus($this->t('Inference endpoint created on HuggingFace. It may take a few minutes to initialize.'));
       }
       catch (\Exception $e) {
-        $this->messenger()->addError($this->t('Failed to create endpoint on HuggingFace: @error', [
+        // Set form error and rebuild to preserve values.
+        $form_state->setErrorByName('', $this->t('Failed to create endpoint on HuggingFace: @error', [
           '@error' => $e->getMessage(),
         ]));
+        $form_state->setRebuild();
         return FALSE;
       }
     }
