@@ -2,6 +2,7 @@
 
 namespace Drupal\huggingface;
 
+use Drupal\Core\Utility\Error;
 use Drupal\Core\Cache\CacheBackendInterface;
 use Drupal\Core\Config\Config;
 use Drupal\Core\Database\Connection;
@@ -292,7 +293,7 @@ class HuggingFaceService implements HuggingFaceServiceInterface {
     catch (\Exception $e) {
       // @todo {"error":"Expected all tensors to be on the same device, but found at least two devices, cuda:0 and cuda:1! (when checking argument for argument index in method wrapper__index_select)"}
       if ($this->getLogging()) {
-        watchdog_exception('huggingface', $e);
+        Error::logException(\Drupal::logger('huggingface'), $e);
       }
 
       throw $e;
