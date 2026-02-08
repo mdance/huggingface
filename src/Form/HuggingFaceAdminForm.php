@@ -74,12 +74,11 @@ class HuggingFaceAdminForm extends ConfigFormBase {
       '#open' => TRUE,
     ];
 
-    $form['authentication']['access_token'] = [
-      '#type' => 'textfield',
-      '#title' => $this->t('Access Token'),
-      '#default_value' => $this->service->getAccessToken(),
-      '#description' => $this->t('Your HuggingFace API access token. Get one from <a href="https://huggingface.co/settings/tokens" target="_blank">huggingface.co/settings/tokens</a>. This token is used as the default for all HuggingFace API requests unless overridden per-endpoint.'),
-      '#maxlength' => 255,
+    $form['authentication']['api_key'] = [
+      '#type' => 'key_select',
+      '#title' => $this->t('API Key'),
+      '#default_value' => $this->config(HuggingFaceConstants::SETTINGS)->get('api_key'),
+      '#description' => $this->t('Select the Key entity containing your HuggingFace access token. Manage keys at <a href="/admin/config/system/keys">Key configuration</a>.'),
     ];
 
     $form['hosted_inference'] = [
@@ -121,16 +120,6 @@ class HuggingFaceAdminForm extends ConfigFormBase {
    */
   public function submitForm(array &$form, FormStateInterface $form_state) {
     $values = $form_state->cleanValues()->getValues();
-
-    $keys = [
-      'access_token',
-    ];
-
-    foreach ($keys as $key) {
-      if (empty($values[$key])) {
-        unset($values[$key]);
-      }
-    }
 
     $this->service->saveConfiguration($values);
 

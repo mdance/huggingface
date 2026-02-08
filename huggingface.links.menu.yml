@@ -17,12 +17,6 @@ huggingface.admin.test:
   parent: huggingface.admin
   weight: 1
 
-huggingface.provider_settings:
-  title: 'Hugging Face Authentication'
-  description: 'Configure Hugging Face as an AI provider.'
-  route_name: huggingface.provider_settings
-  parent: ai.admin_providers
-
 entity.inference_endpoint.overview:
   title: Inference Endpoints
   parent: huggingface.admin

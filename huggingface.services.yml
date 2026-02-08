@@ -9,7 +9,7 @@ services:
     class: Drupal\huggingface\HuggingFaceService
     arguments:
       - '@config.factory'
-      - '@state'
+      - '@key.repository'
       - '@http_client_factory'
       - '@file_system'
       - '@file.repository'

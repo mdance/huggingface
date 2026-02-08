@@ -2,9 +2,6 @@ huggingface.settings:
   type: config_object
   label: 'Hugging Face Settings'
   mapping:
-    access_token:
-      type: string
-      label: 'Access Token'
     url:
       type: string
       label: 'URL'

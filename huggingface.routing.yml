@@ -12,14 +12,6 @@ huggingface.admin.settings:
     _form: 'Drupal\huggingface\Form\HuggingFaceAdminForm'
   requirements:
     _permission: 'administer huggingface'
-huggingface.provider_settings:
-  path: '/admin/config/ai/providers/huggingface'
-  defaults:
-    _title: 'Hugging Face Provider'
-    _form: 'Drupal\huggingface\Form\HuggingFaceProviderForm'
-  requirements:
-    _permission: 'administer huggingface'
-
 huggingface.admin.test:
   path: '/admin/config/services/huggingface/test'
   defaults:

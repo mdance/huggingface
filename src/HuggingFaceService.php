@@ -11,8 +11,8 @@ use Drupal\Core\Extension\ModuleHandlerInterface;
 use Drupal\Core\File\FileSystemInterface;
 use Drupal\Core\Http\ClientFactory;
 use Drupal\Core\Logger\LoggerChannelInterface;
-use Drupal\Core\State\StateInterface;
 use Drupal\Core\Config\ConfigFactoryInterface;
+use Drupal\key\KeyRepositoryInterface;
 use Drupal\Core\StringTranslation\StringTranslationTrait;
 use Drupal\file\FileRepositoryInterface;
 use GuzzleHttp\ClientInterface;
@@ -48,7 +48,7 @@ class HuggingFaceService implements HuggingFaceServiceInterface {
    */
   public function __construct(
     protected ConfigFactoryInterface $configFactory,
-    protected StateInterface $state,
+    protected KeyRepositoryInterface $keyRepository,
     protected ClientFactory $clientFactory,
     protected FileSystemInterface $fileSystem,
     protected FileRepositoryInterface $fileRepository,
@@ -75,7 +75,14 @@ class HuggingFaceService implements HuggingFaceServiceInterface {
    * {@inheritDoc}
    */
   public function getAccessToken() {
-    return $this->getConfiguration()['access_token'] ?? '';
+    $keyId = $this->config->get('api_key');
+    if ($keyId) {
+      $key = $this->keyRepository->getKey($keyId);
+      if ($key) {
+        return $key->getKeyValue() ?: '';
+      }
+    }
+    return '';
   }
 
   /**
@@ -96,26 +103,12 @@ class HuggingFaceService implements HuggingFaceServiceInterface {
    * {@inheritDoc}
    */
   public function saveConfiguration(array $input) {
-    $keys = [
-      'access_token',
-    ];
-
-    $state = $this->state->get(HuggingFaceConstants::SETTINGS, []);
-
-    foreach ($keys as $key) {
-      if (isset($input[$key])) {
-        $state[$key] = $input[$key];
-        unset($input[$key]);
-      }
-    }
-
     $config = $this->configFactory->getEditable(HuggingFaceConstants::SETTINGS);
 
     foreach ($input as $key => $value) {
       $config->set($key, $value);
     }
 
-    $this->state->set(HuggingFaceConstants::SETTINGS, $state);
     $config->save();
 
     return $this;
@@ -125,12 +118,7 @@ class HuggingFaceService implements HuggingFaceServiceInterface {
    * {@inheritDoc}
    */
   public function getConfiguration() {
-    $output = $this->config->get();
-    $state = $this->state->get(HuggingFaceConstants::SETTINGS, []);
-
-    $output = array_merge($output, $state);
-
-    return $output;
+    return $this->config->get();
   }
 
   /**
