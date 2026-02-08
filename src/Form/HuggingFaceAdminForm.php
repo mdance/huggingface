@@ -3,7 +3,7 @@
 namespace Drupal\huggingface\Form;
 
 use Drupal\Core\Config\ConfigFactoryInterface;
-use Drupal\Core\Extension\ModuleHandlerInterface;
+use Drupal\Core\Config\TypedConfigManagerInterface;
 use Drupal\Core\Form\ConfigFormBase;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\huggingface\HuggingFaceConstants;
@@ -18,22 +18,29 @@ class HuggingFaceAdminForm extends ConfigFormBase {
   /**
    * Provides the constructor method.
    *
-   * @param ConfigFactoryInterface $configFactory
-   * @param HuggingFaceServiceInterface $service
+   * @param \Drupal\Core\Config\ConfigFactoryInterface $configFactory
+   *   The config factory.
+   * @param \Drupal\Core\Config\TypedConfigManagerInterface $typedConfigManager
+   *   The typed config manager.
+   * @param \Drupal\huggingface\HuggingFaceServiceInterface $service
+   *   The HuggingFace service.
    */
   public function __construct(
     ConfigFactoryInterface $configFactory,
+    TypedConfigManagerInterface $typedConfigManager,
     protected HuggingFaceServiceInterface $service,
   ) {
-    parent::__construct($configFactory);
+    parent::__construct($configFactory, $typedConfigManager);
   }
 
   /**
    * {@inheritdoc}
    */
+  #[\Override]
   public static function create(ContainerInterface $container) {
     return new static(
       $container->get('config.factory'),
+      $container->get('config.typed'),
       $container->get('huggingface'),
     );
   }

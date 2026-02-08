@@ -18,7 +18,8 @@ class HuggingFaceTestForm extends FormBase {
   /**
    * Provides the constructor method.
    *
-   * @param HuggingFaceServiceInterface $service
+   * @param \Drupal\huggingface\HuggingFaceServiceInterface $service
+   *   The HuggingFace service.
    */
   public function __construct(
     protected HuggingFaceServiceInterface $service,
@@ -455,8 +456,7 @@ class HuggingFaceTestForm extends FormBase {
       '#title' => $this->t('Inputs'),
     ];
 
-    // @todo Implement translation, text to text generation, text generation
-
+    // @todo Implement translation, text to text generation, text generation.
     $key = 'feature_extraction';
 
     $form[$key] = [

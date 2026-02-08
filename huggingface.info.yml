@@ -4,4 +4,6 @@ description: 'Provides Hugging Face functionality.'
 package: Machine Learning
 version: VERSION
 core_version_requirement: ^10 || ^11
+dependencies:
+  - ai:ai
 configure: huggingface.admin.settings

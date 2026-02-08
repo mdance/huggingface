@@ -17,3 +17,7 @@ services:
       - '@database'
       - '@cache.huggingface'
       - '@module_handler'
+      - '@logger.channel.huggingface'
+  logger.channel.huggingface:
+    parent: logger.channel_base
+    arguments: ['huggingface']

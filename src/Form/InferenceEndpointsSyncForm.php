@@ -16,20 +16,25 @@ class InferenceEndpointsSyncForm extends FormBase {
   /**
    * Provides the constructor method.
    *
-   * @param HuggingFaceServiceInterface $service
+   * @param \Drupal\huggingface\HuggingFaceServiceInterface $service
    *   Provides the module service.
+   * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entityTypeManager
+   *   The entity type manager.
    */
   public function __construct(
     protected HuggingFaceServiceInterface $service,
+    protected EntityTypeManagerInterface $entityTypeManager,
   ) {
   }
 
   /**
    * {@inheritdoc}
    */
+  #[\Override]
   public static function create(ContainerInterface $container) {
     return new static(
       $container->get('huggingface'),
+      $container->get('entity_type.manager'),
     );
   }
 
@@ -209,7 +214,7 @@ class InferenceEndpointsSyncForm extends FormBase {
         $response = $this->service->getInferenceEndpoints($parameters);
         $results = $response->items ?? [];
 
-        $storage = \Drupal::entityTypeManager()->getStorage('inference_endpoint');
+        $storage = $this->entityTypeManager->getStorage('inference_endpoint');
 
         foreach ($items as $item) {
           foreach ($results as $result) {

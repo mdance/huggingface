@@ -1,0 +1,79 @@
+chat:
+  input:
+    description: 'Text prompt for the model.'
+    type: 'string'
+    default: 'Hello, how are you?'
+    required: true
+  authentication:
+    description: 'Hugging Face API Token.'
+    type: 'string'
+    default: ''
+    required: true
+  configuration:
+    max_tokens:
+      label: 'Max Tokens'
+      description: 'The maximum number of tokens to generate.'
+      type: 'integer'
+      default: 256
+      required: false
+      constraints:
+        min: 1
+        max: 4096
+    temperature:
+      label: 'Temperature'
+      description: 'Sampling temperature 0-1. Higher values mean more random output.'
+      type: 'float'
+      default: 1
+      required: false
+      constraints:
+        min: 0
+        max: 2
+        step: 0.1
+embeddings:
+  input:
+    description: 'Text to generate embeddings for.'
+    type: 'string'
+    default: 'Once upon a time in London.'
+    required: true
+  authentication:
+    description: 'Hugging Face API Token.'
+    type: 'string'
+    default: ''
+    required: true
+  configuration: []
+image_classification:
+  input:
+    description: 'Binary image data to classify.'
+    type: 'string'
+    default: ''
+    required: true
+  authentication:
+    description: 'Hugging Face API Token.'
+    type: 'string'
+    default: ''
+    required: true
+  configuration: []
+text_to_image:
+  input:
+    description: 'Text prompt for image generation.'
+    type: 'string'
+    default: 'A beautiful sunset over the city.'
+    required: true
+  authentication:
+    description: 'Hugging Face API Token.'
+    type: 'string'
+    default: ''
+    required: true
+  configuration: []
+speech_to_text:
+  input:
+    description: 'Binary audio data to transcribe.'
+    type: 'string'
+    default: ''
+    required: true
+  authentication:
+    description: 'Hugging Face API Token.'
+    type: 'string'
+    default: ''
+    required: true
+  configuration: []
