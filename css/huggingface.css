@@ -1,0 +1,14 @@
+/**
+ * @file
+ * Styles for the huggingface module.
+ */
+
+.endpoint-status-banner {
+  padding: 10px;
+  margin-bottom: 15px;
+  border-radius: 4px;
+}
+
+.endpoint-help-text {
+  margin-top: 15px;
+}

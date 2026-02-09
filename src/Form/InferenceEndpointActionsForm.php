@@ -50,6 +50,7 @@ class InferenceEndpointActionsForm extends FormBase {
    */
   public function buildForm(array $form, FormStateInterface $form_state, $inference_endpoint = NULL) {
     $form['#inference_endpoint'] = $inference_endpoint;
+    $form['#attached']['library'][] = 'huggingface/huggingface';
 
     /** @var \Drupal\huggingface\Entity\InferenceEndpoint $endpoint */
     $endpoint = $this->entityTypeManager->getStorage('inference_endpoint')->load($inference_endpoint);
@@ -84,7 +85,7 @@ class InferenceEndpointActionsForm extends FormBase {
 
     $form['info']['status_banner'] = [
       '#type' => 'markup',
-      '#markup' => '<div class="' . $state_class . '" style="padding: 10px; margin-bottom: 15px; border-radius: 4px;"><strong>' . $this->t('Status:') . '</strong> ' . $state_display . '</div>',
+      '#markup' => '<div class="' . $state_class . ' endpoint-status-banner"><strong>' . $this->t('Status:') . '</strong> ' . $state_display . '</div>',
     ];
 
     $form['info']['details'] = [
@@ -162,7 +163,7 @@ class InferenceEndpointActionsForm extends FormBase {
 
       $form['lifecycle']['help'] = [
         '#type' => 'markup',
-        '#markup' => '<div class="description" style="margin-top: 15px;"><strong>' . $this->t('Tip:') . '</strong> ' . $this->t('Use "Scale to Zero" to save costs while keeping the endpoint ready for auto-start. Use "Pause" for longer periods when you don\'t need the endpoint.') . '</div>',
+        '#markup' => '<div class="description endpoint-help-text"><strong>' . $this->t('Tip:') . '</strong> ' . $this->t('Use "Scale to Zero" to save costs while keeping the endpoint ready for auto-start. Use "Pause" for longer periods when you don\'t need the endpoint.') . '</div>',
       ];
     }
     elseif ($state === 'scaledtozero' || $state === 'scaled_to_zero') {
@@ -178,7 +179,7 @@ class InferenceEndpointActionsForm extends FormBase {
 
       $form['lifecycle']['help'] = [
         '#type' => 'markup',
-        '#markup' => '<div class="description" style="margin-top: 15px;">' . $this->t('The endpoint is scaled to zero and will automatically start when it receives a request. There may be a cold start delay of 30-60 seconds.') . '</div>',
+        '#markup' => '<div class="description endpoint-help-text">' . $this->t('The endpoint is scaled to zero and will automatically start when it receives a request. There may be a cold start delay of 30-60 seconds.') . '</div>',
       ];
     }
     elseif ($state === 'paused') {
@@ -192,19 +193,19 @@ class InferenceEndpointActionsForm extends FormBase {
 
       $form['lifecycle']['help'] = [
         '#type' => 'markup',
-        '#markup' => '<div class="description" style="margin-top: 15px;">' . $this->t('The endpoint is paused and not incurring charges. Click "Resume Endpoint" to start it. Startup typically takes 2-5 minutes.') . '</div>',
+        '#markup' => '<div class="description endpoint-help-text">' . $this->t('The endpoint is paused and not incurring charges. Click "Resume Endpoint" to start it. Startup typically takes 2-5 minutes.') . '</div>',
       ];
     }
     elseif (in_array($state, ['initializing', 'pending', 'updating'])) {
       $form['lifecycle']['help'] = [
         '#type' => 'markup',
-        '#markup' => '<div class="messages messages--status" style="margin-top: 15px;">' . $this->t('The endpoint is currently starting up or updating. Please wait and refresh the status.') . '</div>',
+        '#markup' => '<div class="messages messages--status endpoint-help-text">' . $this->t('The endpoint is currently starting up or updating. Please wait and refresh the status.') . '</div>',
       ];
     }
     elseif ($state === 'failed') {
       $form['lifecycle']['help'] = [
         '#type' => 'markup',
-        '#markup' => '<div class="messages messages--error" style="margin-top: 15px;">' . $this->t('The endpoint has failed. Check the HuggingFace dashboard for error details. You may need to recreate the endpoint.') . '</div>',
+        '#markup' => '<div class="messages messages--error endpoint-help-text">' . $this->t('The endpoint has failed. Check the HuggingFace dashboard for error details. You may need to recreate the endpoint.') . '</div>',
       ];
     }
 

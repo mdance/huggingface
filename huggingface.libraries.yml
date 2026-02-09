@@ -1,0 +1,4 @@
+huggingface:
+  css:
+    component:
+      css/huggingface.css: {}
