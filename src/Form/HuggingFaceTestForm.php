@@ -803,7 +803,7 @@ class HuggingFaceTestForm extends FormBase {
         '#title' => $this->t('Inputs'),
         '#upload_location' => 'private://hugging-face/' . $key,
         '#upload_validators' => [
-          'file_validate_extensions' => $meta['extensions'],
+          'FileExtension' => ['extensions' => implode(' ', $meta['extensions'])],
         ],
       ];
     }
